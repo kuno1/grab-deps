@@ -9,8 +9,8 @@ const glob = require( 'glob' );
  */
 function grabDeps( file ) {
 	const fileContent = fs.readFileSync( file, 'utf8' );
+	const deps = [];
 	if ( fileContent ) {
-		const deps = [];
 		fileContent.toString().split( "\n" ).map( ( line, index ) => {
 			if ( line.match( /^[ *]*(wp|@)deps=?(.*)$/ ) ) {
 				RegExp.$2.split( ',' ).map( ( dep ) => {
@@ -21,10 +21,8 @@ function grabDeps( file ) {
 				} );
 			}
 		} );
-		return deps;
-	} else {
-		return new Error( 'File not found.' );
 	}
+	return deps;
 };
 module.exports.grabDeps = grabDeps;
 
