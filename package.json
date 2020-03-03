@@ -1,0 +1,25 @@
+{
+  "name": "@kunoichi/grab-deps",
+  "version": "1.0.0",
+  "description": "Grab dependencies from js/css files.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kuno1/grab-deps.git"
+  },
+  "keywords": [
+    "wordpress"
+  ],
+  "author": "Kunoichi Market",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kuno1/grab-deps/issues"
+  },
+  "homepage": "https://github.com/kuno1/grab-deps#readme",
+  "dependencies": {
+    "glob": "^7.1.6"
+  }
+}
