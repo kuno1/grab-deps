@@ -114,7 +114,7 @@ Now you can get updated dump information whatever changes you made for assets.
 [
   {
     "path": "assets/js/app.js",
-    "deps": [ 'jquery', 'wp-api-fetch' ],
+    "deps": [ "jquery", "wp-api-fetch" ],
   }
 ]
 ```
