@@ -12,3 +12,17 @@ describe( 'Basic Grab Functions', () => {
 		assert.deepEqual( grabDeps( 'test/src/js/multiple.js' ), [ 'jquery-masonry', 'wp-api-fetch', 'wp-api-request' ] );
 	} );
 } );
+
+describe( 'License.txt test.', () => {
+	it( 'LICENSE.txt', () => {
+		assert.deepEqual( grabDeps( 'test/src/js/no-comment.js' ), [ 'wp-element', 'wp-i18n' ] );
+	} );
+	it( 'mit.txt', () => {
+		assert.deepEqual( grabDeps( 'test/src/js/no-comment.js', '.mit.txt' ), [ 'wp-element', 'jquery' ] );
+	} );
+	it( 'function.txt', () => {
+		assert.deepEqual( grabDeps( 'test/src/js/no-comment.js', ( file ) => {
+			return file.replace( '.js', '-license.txt' );
+		} ), [ 'wp-element', 'scriptaculous' ] );
+	} );
+} );

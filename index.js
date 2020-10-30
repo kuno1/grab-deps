@@ -4,11 +4,33 @@ const glob = require( 'glob' );
 /**
  * Grab dependencies from file.
  *
- * @param {String} file File path to scan.
+ * @param {String} file   File path to scan.
+ * @param {String|Function} suffix Suffix for license.txt. If exists, it priors. Default, ".License.txt".
  * @returns {Error}
  */
-function grabDeps( file ) {
-	const fileContent = fs.readFileSync( file, 'utf8' );
+function grabDeps( file, suffix = '' ) {
+	if ( '' === suffix ) {
+		suffix = '.LICENSE.txt';
+	}
+	let fileToScan = file;
+	let licenseTxt = '';
+	switch ( typeof suffix) {
+		case 'string':
+			if ( suffix ) {
+				licenseTxt = file + suffix;
+			}
+			break;
+		case 'function':
+			const generagedSuffix = suffix( file );
+			if ( generagedSuffix ) {
+				licenseTxt = generagedSuffix;
+			}
+			break;
+	}
+	if ( licenseTxt && fs.existsSync( licenseTxt ) ) {
+		fileToScan = licenseTxt;
+	}
+	const fileContent = fs.readFileSync( fileToScan, 'utf8' );
 	const deps = [];
 	if ( fileContent ) {
 		fileContent.toString().split( "\n" ).map( ( line, index ) => {
@@ -29,9 +51,10 @@ module.exports.grabDeps = grabDeps;
 /**
  * Scan directory and extract dependencies.
  * @param {String} dir Directory file to scan.
+ * @param {String} suffix Suffix for license file.
  * @returns {Array}
  */
-function scanDir( dir ) {
+function scanDir( dir, suffix = '' ) {
 	const pattern = dir.replace( /\/$/, '' ) + '/**/*.*(css|js)';
 	const matches = glob.sync( pattern );
 	const result = [];
@@ -39,7 +62,7 @@ function scanDir( dir ) {
 		result.push( {
 			path: file,
 			ext: /\.js$/.test( file ) ? 'js' : 'css',
-			deps: grabDeps( file ),
+			deps: grabDeps( file, suffix ),
 			footer: true,
 		} );
 	} );
@@ -51,10 +74,11 @@ module.exports.scanDir = scanDir;
  * Dump dependencies in json file.
  *
  * @param {String} dir  Directory to scan.
+ * @param {String} suffix Suffix for license file.
  * @param {String} dump File to dump.
  */
-function dumpSetting( dir, dump = './wp-dependencies.json' ) {
-	const result = scanDir( dir );
+function dumpSetting( dir, dump = './wp-dependencies.json', suffix = '' ) {
+	const result = scanDir( dir, suffix );
 	fs.writeFileSync( dump, JSON.stringify( result, null, "\t" ) );
 }
 module.exports.dumpSetting = dumpSetting;
