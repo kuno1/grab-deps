@@ -15,20 +15,36 @@ describe( 'Additional meta information', () => {
 		assert.equal( js_no.version, '0.0.0' );
 	} );
 
-	it( 'JS with @footer', () => {
-		assert.equal( js.footer, false );
-	} );
-
-	it( 'JS without @footer', () => {
-		assert.equal( js_no.footer, true );
-	} );
-
 	it( 'CSS with @version', () => {
 		assert.equal( css.version, '1.5.9' );
 	} );
 
 	it( 'CSS without @version', () => {
 		assert.equal( css_no.version, '0.0.0' );
+	} );
+
+	it( 'JS with @handle', () => {
+		assert.equal( js.handle, 'my-plugin-jquery' );
+	} );
+
+	it( 'JS without @handle', () => {
+		assert.equal( js_no.handle, 'no-deps' );
+	} );
+
+	it( 'CSS with @handle', () => {
+		assert.equal( css.handle, 'my-plugin-bootstrap' );
+	} );
+
+	it( 'CSS without @handle', () => {
+		assert.equal( css_no.handle, 'no-deps' );
+	} );
+
+	it( 'JS with @footer', () => {
+		assert.equal( js.footer, false );
+	} );
+
+	it( 'JS without @footer', () => {
+		assert.equal( js_no.footer, true );
 	} );
 
 	it( 'CSS with @media', () => {

@@ -12,7 +12,7 @@ const glob = require( 'glob' );
 function scanHeader( object, fileContent) {
 	const deps = [];
 	fileContent.toString().split( "\n" ).map( ( line, index ) => {
-		if ( ! line.match( /^[ *]*(wp|@)(deps|version|footer|media)=?(.*)$/ ) ) {
+		if ( ! line.match( /^[ *]*(wp|@)(deps|handle|version|footer|media)=?(.*)$/ ) ) {
 			// This is not header. Skip.
 			return;
 		}
@@ -22,6 +22,7 @@ function scanHeader( object, fileContent) {
 		switch ( key ) {
 			case 'version':
 			case 'media':
+			case 'handle':
 				object[ key ] = value;
 				break;
 			case 'footer':
@@ -51,6 +52,7 @@ function scanHeader( object, fileContent) {
  */
 function grabDeps( file, suffix = '', version = '0.0.0' ) {
 	const info = {
+		handle: file.split( '/' ).slice( -1 )[0].replace( /\.(js|jsx|css|scss)$/, '' ),
 		path: file,
 		ext: /\.js$/.test( file ) ? 'js' : 'css',
 		hash: '',
