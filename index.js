@@ -1,6 +1,11 @@
 const fs = require( 'fs' );
 const glob = require( 'glob' );
 
+
+function scanHeader() {
+	
+}
+
 /**
  * Grab dependencies from file.
  *
@@ -44,9 +49,15 @@ function grabDeps( file, suffix = '' ) {
 			}
 		} );
 	}
+	result.push( {
+		path: file,
+		ext: /\.js$/.test( file ) ? 'js' : 'css',
+		deps: grabDeps( file, suffix ),
+		footer: true,
+	} );
 	return deps;
-};
-module.exports.grabDeps = grabDeps;
+}
+
 
 /**
  * Scan directory and extract dependencies.
@@ -58,17 +69,12 @@ function scanDir( dir, suffix = '' ) {
 	const pattern = dir.replace( /\/$/, '' ) + '/**/*.*(css|js)';
 	const matches = glob.sync( pattern );
 	const result = [];
-	matches.map( ( file ) => {
-		result.push( {
-			path: file,
-			ext: /\.js$/.test( file ) ? 'js' : 'css',
-			deps: grabDeps( file, suffix ),
-			footer: true,
-		} );
+	matches.forEach( ( file ) => {
+		result.push( grabDeps( file, suffix ) );
 	} );
 	return result;
-};
-module.exports.scanDir = scanDir;
+}
+
 
 /**
  * Dump dependencies in json file.
@@ -81,4 +87,8 @@ function dumpSetting( dir, dump = './wp-dependencies.json', suffix = '' ) {
 	const result = scanDir( dir, suffix );
 	fs.writeFileSync( dump, JSON.stringify( result, null, "\t" ) );
 }
+
+module.exports.scanHeader = scanHeader;
+module.exports.grabDeps = grabDeps;
+module.exports.scanDir = scanDir;
 module.exports.dumpSetting = dumpSetting;
