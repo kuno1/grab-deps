@@ -16,6 +16,11 @@ Suppose that you have `assets/js/app.js` in your theme folder.
 
 ```js
 /*!
+ * My Plugin main JS
+ * 
+ * @handle my-plugin-app
+ * @version 2.1.0
+ * @footer false
  * @deps jquery, jquery-masonry, wp-i18n
  */
 console.log( 'This script runs jQuery Masonry.' );
@@ -26,10 +31,14 @@ And you can get setting file `wp-dependencies.json` like this.
 ```json
 [
   {
+    "handle": "my-plugin",
+    "version": "2.1.0",
     "path": "assets/js/app.js",
+    "hash": "5e84fd5b5817a6397aeef4240afeb97a",
     "deps": [ "jquery", "jquery-masonry", "wp-i18n" ],
     "ext": "js",
-    "footer": true
+    "footer": true,
+    "media": "all"
   }
 ]
 ```
@@ -42,22 +51,31 @@ add_action( 'init', function() {
     $settings = json_decode( file_get_contents( __DIR__ . '/wp-dependencies.json' ), true );
     // Register each setting.
     foreach ( $settings as $setting ) {
-        $path   = get_template_directory() . '/' . $setting['path'];
-        $url    = get_template_directory_uri() . '/' . $setting['path'];
-        $time   = filemtim( $path );
-        $handle = 'my-' . str_replace( '.', '-', basename( $path ) );
+        $handle  = $setting['handle'];
+        $version = $setting['hash']; // You can also specify @version
+        $url     = get_template_directory_uri() . '/' . $setting['path'];
         if ( 'js' === $setting['ext'] ) {
             // Register JavaScript.
-            wp_register_script( $handle, $url, $deps, $time, true );
+            wp_register_script( $handle, $url, $deps, $version, $setting['footer'] );
         } else {
             // This is CSS.
-            wp_register_style( $handle, $url, $deps, $time ); 
+            wp_register_style( $handle, $url, $deps, $version, $setting['media'] ); 
         }
     }
 } );
 ```
 
 Now you can enqueue any of your scripts/styles with `wp_enqueue_script( 'my-app-js' )` or `wp_enqueue_style( 'my-blocks-alert-css' )`.
+
+## Supported Header Info
+
+| Name     | Default                          | type    | Target |
+|----------|----------------------------------|---------|--------|
+| @version | 0.0.0                            | String  | both   |
+| @handle  | Base file name without extension | String  | both   |
+| @deps    | Empty                            | Array   | both   |
+| @footer  | True                             | Boolean | js     |
+| @media   | all                              | String  | css    |
 
 ## Installation
 
@@ -117,4 +135,47 @@ Now you can get updated dump information whatever changes you made for assets.
     "deps": [ "jquery", "wp-api-fetch" ],
   }
 ]
+```
+
+### License text
+
+Nowadays, some compilers like [webpack](https://webpack.js.org/plugins/terser-webpack-plugin/) extract license comments. If original is like below:
+
+```
+/*!
+ * Main app file.js
+ * 
+ * @version 2.0.0
+ */
+console.log( 'Start rendering!' );
+```
+
+`file.js` will compiled like below:
+
+```
+console.log( 'Start rendering!' );
+```
+
+And in same directory, `file.js.LICENSE.txt` will be exported.
+
+```
+/*!
+ * Main app file.js
+ * 
+ * @version 2.0.0
+ */
+```
+
+In such case, `@kunoichi/grab-deps` will support `.LISENCE.txt` format by default. 3rd arghment `suffix` of `dumpSetting` supports other format.
+
+```js
+// If your JS license will be in `app.js.txt`,
+// You can set suffix.
+// `app.js` will be `app.js.txt`
+dumpSetting( 'assets', './wp-dependencies.json', '.txt' );
+// If your licenses will be other format, specify function.
+dumpSetting( 'assets', './wp-dependencies.json', function( path ) {
+  // Convert path to your license.txt
+  return licensePath;
+} );
 ```

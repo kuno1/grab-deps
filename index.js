@@ -45,9 +45,9 @@ function scanHeader( object, fileContent) {
 /**
  * Grab dependencies from file.
  *
- * @param {String} file   File path to scan.
- * @param {String|Function} suffix Suffix for license.txt. If exists, it priors. Default, ".License.txt".
- * @param {String} version Default version for files. If specified in header, it priors.
+ * @param {String}          file    File path to scan.
+ * @param {String|Function} suffix  Suffix for license.txt. If exists, it priors. Default, ".License.txt".
+ * @param {String}          version Default version for files. If specified in header, it priors.
  * @returns {object|null}
  */
 function grabDeps( file, suffix = '', version = '0.0.0' ) {
@@ -106,9 +106,9 @@ function grabDeps( file, suffix = '', version = '0.0.0' ) {
 /**
  * Scan directory and extract dependencies.
  *
- * @param {String} dir     Directory file to scan.
- * @param {String} suffix  Suffix for license file.
- * @param {String} version Default version string.
+ * @param {String}          dir     Directory file to scan.
+ * @param {String|Function} suffix  Suffix for license file.
+ * @param {String}          version Default version string.
  * @returns {Array}
  */
 function scanDir( dir, suffix = '', version = '0.0.0' ) {
@@ -125,9 +125,10 @@ function scanDir( dir, suffix = '', version = '0.0.0' ) {
 /**
  * Dump dependencies in json file.
  *
- * @param {String} dir    Directory to scan.
- * @param {String} suffix Suffix for license file.
- * @param {String} dump   File to dump.
+ * @param {String}          dir     Directory to scan.
+ * @param {String}          dump    File to dump.
+ * @param {String|Function} suffix  Suffix for license file.
+ * @param {String}          version Default version string.
  */
 function dumpSetting( dir, dump = './wp-dependencies.json', suffix = '', version = '0.0.0' ) {
 	const result = scanDir( dir, suffix, version );
