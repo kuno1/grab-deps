@@ -1,3 +1,5 @@
 test/
 wp-dependencies.json
 .node-version
+.github/
+.idea/
