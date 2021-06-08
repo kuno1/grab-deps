@@ -15,4 +15,8 @@ describe( 'Directory Scanner Test', () => {
 		} );
 		assert.deepEqual( css.deps, [ 'bootstrap' ] );
 	} );
+	it( 'Directory as array of string', () => {
+		const results = scanDir( [ 'test/src/css', 'test/src/js' ] );
+		assert.equal( 8, results.length );
+	} );
 } );

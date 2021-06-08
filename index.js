@@ -106,17 +106,22 @@ function grabDeps( file, suffix = '', version = '0.0.0' ) {
 /**
  * Scan directory and extract dependencies.
  *
- * @param {String}          dir     Directory file to scan.
+ * @param {string|string[]} dirs    Directory file to scan.
  * @param {String|Function} suffix  Suffix for license file.
  * @param {String}          version Default version string.
  * @returns {Array}
  */
-function scanDir( dir, suffix = '', version = '0.0.0' ) {
-	const pattern = dir.replace( /\/$/, '' ) + '/**/*.*(css|js)';
-	const matches = glob.sync( pattern );
+function scanDir( dirs, suffix = '', version = '0.0.0' ) {
+	if ( 'string' === typeof dirs ) {
+		dirs = [ dirs ];
+	}
 	const result = [];
-	matches.forEach( ( file ) => {
-		result.push( grabDeps( file, suffix, version ) );
+	dirs.forEach( ( dir ) => {
+		const pattern = dir.replace( /\/$/, '' ) + '/**/*.*(css|js)';
+		const matches = glob.sync( pattern );
+		matches.forEach( ( file ) => {
+			result.push( grabDeps( file, suffix, version ) );
+		} );
 	} );
 	return result;
 }
@@ -125,13 +130,13 @@ function scanDir( dir, suffix = '', version = '0.0.0' ) {
 /**
  * Dump dependencies in json file.
  *
- * @param {String}          dir     Directory to scan.
+ * @param {string|string[]} dirs    Directory to scan.
  * @param {String}          dump    File to dump.
  * @param {String|Function} suffix  Suffix for license file.
  * @param {String}          version Default version string.
  */
-function dumpSetting( dir, dump = './wp-dependencies.json', suffix = '', version = '0.0.0' ) {
-	const result = scanDir( dir, suffix, version );
+function dumpSetting( dirs, dump = './wp-dependencies.json', suffix = '', version = '0.0.0' ) {
+	const result = scanDir( dirs, suffix, version );
 	fs.writeFileSync( dump, JSON.stringify( result, null, "\t" ) );
 }
 
