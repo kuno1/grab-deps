@@ -15,14 +15,14 @@ describe( 'Basic Grab Functions', () => {
 
 describe( 'License.txt test.', () => {
 	it( 'LICENSE.txt', () => {
-		assert.deepEqual( grabDeps( 'test/src/js/no-comment.js' ).deps, [ 'wp-element', 'wp-i18n' ] );
+		assert.deepEqual( grabDeps( 'test/src/js/no-comment.js' ).deps, [ 'jquery', 'wp-element', 'wp-i18n' ] );
 	} );
 	it( 'mit.txt', () => {
-		assert.deepEqual( grabDeps( 'test/src/js/no-comment.js', '.mit.txt' ).deps, [ 'wp-element', 'jquery' ] );
+		assert.deepEqual( grabDeps( 'test/src/js/no-comment.js', '.mit.txt' ).deps, [ 'jquery', 'wp-element', 'wp-blocks' ] );
 	} );
 	it( 'function.txt', () => {
 		assert.deepEqual( grabDeps( 'test/src/js/no-comment.js', ( file ) => {
 			return file.replace( '.js', '-license.txt' );
-		} ).deps, [ 'wp-element', 'scriptaculous' ] );
+		} ).deps, [ 'jquery', 'wp-element', 'scriptaculous' ] );
 	} );
 } );

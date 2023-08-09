@@ -19,10 +19,8 @@
     "url": "https://github.com/kuno1/grab-deps/issues"
   },
   "homepage": "https://github.com/kuno1/grab-deps#readme",
-  "dependencies": {
-    "glob": "^7.1.6"
-  },
   "devDependencies": {
-    "mocha": "^7.1.0"
+    "glob": "^10.3.3",
+    "mocha": "^10.2.0"
   }
 }

@@ -5,12 +5,15 @@ const glob = require( 'glob' );
 /**
  * Parse header to grab information.
  *
- * @param {object} object      Object to assign.
- * @param {string} fileContent Line string to parse.
+ * @param {object}   object      Object to assign.
+ * @param {string}   fileContent Line string to parse.
+ * @param {string[]} deps        Additional dependencies.
  * @return {object}
  */
-function scanHeader( object, fileContent) {
-	const deps = [];
+function scanHeader( object, fileContent, deps ) {
+	if ( ! deps ) {
+		deps = [];
+	}
 	fileContent.toString().split( "\n" ).map( ( line, index ) => {
 		if ( ! line.match( /^[ *]*(wp|@)(deps|handle|version|footer|media)=?(.*)$/ ) ) {
 			// This is not header. Skip.
@@ -86,6 +89,24 @@ function grabDeps( file, suffix = '', version = '0.0.0' ) {
 		hashOriginal = true;
 	}
 
+	// Search $file.assets.php file.
+	const deps = [];
+	if ( file.match( /\.js$/ ) ) {
+		const assetsFile = file.replace( /\.js$/, '.asset.php' );
+		if ( fs.existsSync( assetsFile ) ) {
+			// Scan PHP and get dependencies.
+			const assetsContent = fs.readFileSync( assetsFile, 'utf8' );
+			if ( assetsContent ) {
+				const match = assetsContent.match( /'dependencies' => array\(([^)]+)\)/ );
+				if ( match ) {
+					match[1].split( ',' ).forEach( ( dep ) => {
+						deps.push( dep.replaceAll( "'", '' ) );
+					} );
+				}
+			}
+		}
+	}
+
 	const fileContent = fs.readFileSync( fileToScan, 'utf8' );
 	if ( fileContent ) {
 		// Add md5 hash string.
@@ -96,7 +117,7 @@ function grabDeps( file, suffix = '', version = '0.0.0' ) {
 			md5hash.update( fileContent );
 		}
 		info.hash = md5hash.digest( 'hex' );
-		return scanHeader( info, fileContent );
+		return scanHeader( info, fileContent, deps );
 	} else {
 		return null;
 	}
