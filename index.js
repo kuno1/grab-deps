@@ -100,7 +100,7 @@ function grabDeps( file, suffix = '', version = '0.0.0' ) {
 				const match = assetsContent.match( /'dependencies' => array\(([^)]+)\)/ );
 				if ( match ) {
 					match[1].split( ',' ).forEach( ( dep ) => {
-						deps.push( dep.replaceAll( "'", '' ) );
+						deps.push( dep.trim().replaceAll( "'", '' ) );
 					} );
 				}
 			}

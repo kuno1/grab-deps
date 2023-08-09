@@ -1,1 +1,1 @@
-<?php return array('dependencies' => array('jquery'), 'version' => '9e20aaa26d4103512888');
+<?php return array('dependencies' => array( 'jquery', 'jquery-ui-datepicker' ), 'version' => '9e20aaa26d4103512888');
