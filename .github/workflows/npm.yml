@@ -6,6 +6,9 @@ on:
       - master
     tags:
       - '*'
+  pull_request:
+    branches:
+      - master
 
 jobs:
 
@@ -13,10 +16,13 @@ jobs:
     name: Test Package
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@master
+
+      - uses: actions/setup-node@v3
         with:
-          node-version: '12.x'
+          node-version: '16.x'
+
       - run: npm install
+
       - run: npm test
   # See {https://github.com/marketplace/actions/setup-node-js-for-use-with-actions}
