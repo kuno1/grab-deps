@@ -86,15 +86,20 @@ function isWordPressScriptsAvailable() {
  * @param {object}   object      Object to assign.
  * @param {string}   fileContent Line string to parse.
  * @param {string[]} deps        Additional dependencies.
+ * @param {number}   max_scan    Maximum lines to scan.
  * @return {object}
  */
-function scanHeader( object, fileContent, deps ) {
+function scanHeader( object, fileContent, deps, max_scan = 60 ) {
 	if ( !deps ) {
 		deps = [];
 	}
 	lines = fileContent.toString().split( "\n" );
-	lines.map( ( line, index ) => {
-		if ( !line.match( /^[ *]*(wp|@)(deps|handle|version|footer|media|strategy|cssmedia)=?(.*)$/ ) ) {
+	lines.forEach( ( line, i ) => {
+		// If limit exceeded, stop scanning.
+		if ( i + 1 > max_scan ) {
+			return;
+		}
+		if ( ! line.match( /^[ *]*(wp|@)(deps|handle|version|footer|media|strategy|cssmedia)=?(.*)$/ ) ) {
 			// This is not header. Skip.
 			return;
 		}
