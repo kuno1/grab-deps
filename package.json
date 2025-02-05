@@ -30,7 +30,7 @@
 	"homepage": "https://github.com/kuno1/grab-deps#readme",
 	"devDependencies": {
 		"@wordpress/scripts": "^27.9.0",
-		"glob": "^10.3.3",
+		"glob": "^11.0.1",
 		"imagemin": "^9.0.0",
 		"imagemin-gifsicle": "^7.0.0",
 		"imagemin-jpegtran": "^8.0.0",
