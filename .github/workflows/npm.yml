@@ -11,7 +11,7 @@ on:
 jobs:
 
   tests:
-    name: Test Package
+    name: JS test with Mocha
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
@@ -27,3 +27,13 @@ jobs:
 
       - name: Run test suit
         run: npm test
+
+  status-check:
+    name: Status Check
+    runs-on: ubuntu-latest
+    if: always()
+    needs: [tests]
+    steps:
+      - uses: re-actors/alls-green@release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}
