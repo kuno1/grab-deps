@@ -1,7 +1,6 @@
 # grab-deps
 
-WordPress library to extract dependencies information from js/css 
-files.
+WordPress library to extract dependencies information from js/css files.
 
 ![TEST](https://github.com/kuno1/grab-deps/workflows/Grab%20deps%20test./badge.svg?branch=master)
 
@@ -13,6 +12,7 @@ This library dump `wp-dependencies.json` which includes dependencies and path in
 ## Example
 
 Suppose that you have `assets/js/app.js` in your theme folder.
+Add @params in license comment.
 
 ```js
 /*!
@@ -69,13 +69,15 @@ Now you can enqueue any of your scripts/styles with `wp_enqueue_script( 'my-app-
 
 ## Supported Header Info
 
-| Name     | Default                          | type    | Target |
-|----------|----------------------------------|---------|--------|
-| @version | 0.0.0                            | String  | both   |
-| @handle  | Base file name without extension | String  | both   |
-| @deps    | Empty                            | Array   | both   |
-| @footer  | True                             | Boolean | js     |
-| @media   | all                              | String  | css    |
+| Name      | Default                              | type    | Target | Possible Values |
+|-----------|--------------------------------------|---------|--------|-----------------|
+| @version  | 0.0.0                                | String  | both   | 1.0.0           |
+| @handle   | Base file name without extension     | String  | both   | my-script       |
+| @deps     | Empty                                | Array   | both   | [jquery, my-js] |
+| @footer   | True                                 | Boolean | js     | true or false   |
+| @strategy | Empty                                | String  | css    | defer,async     |
+| @media    | all                                  | String  | css    | screen, print   |
+| @cssmedia | Same as `@media`. Avoid media query. | String  | css    | screen, print   |
 
 ## Installation
 
@@ -87,7 +89,7 @@ npm install @kunoichi/grab-deps
 
 Suppose that the directory structure of your theme/plugin is like below:
 
-```
+```bash
 assets
 - js
   - main.js
@@ -113,14 +115,14 @@ const { dumpSetting } = require('@kunoichi/grab-deps');
 
 // Dump task.
 gulp.task( 'dump', function( done ) {
-	dumpSetting( 'assets' );
-	done();
+  dumpSetting( 'assets' );
+  done();
 } );
 
 // Watch assets directory.
 gulp.task( 'watch', function () {
-	// Watch assets change and dump.
-	gulp.watch( [ 'assets/**/*.css', 'assets/**/*.js' ], gulp.task( 'dump' ) );
+  // Watch assets change and dump.
+  gulp.watch( [ 'assets/**/*.css', 'assets/**/*.js' ], gulp.task( 'dump' ) );
 } );
 ```
 
@@ -141,10 +143,10 @@ Now you can get updated dump information whatever changes you made for assets.
 
 Nowadays, some compilers like [webpack](https://webpack.js.org/plugins/terser-webpack-plugin/) extract license comments. If original is like below:
 
-```
+```js
 /*!
  * Main app file.js
- * 
+ *
  * @version 2.0.0
  */
 console.log( 'Start rendering!' );
@@ -152,16 +154,16 @@ console.log( 'Start rendering!' );
 
 `file.js` will compiled like below:
 
-```
+```js
 console.log( 'Start rendering!' );
 ```
 
 And in same directory, `file.js.LICENSE.txt` will be exported.
 
-```
+```js
 /*!
  * Main app file.js
- * 
+ *
  * @version 2.0.0
  */
 ```
