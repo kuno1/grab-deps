@@ -2,8 +2,6 @@ name: Grab deps test.
 
 on:
   push:
-    branches:
-      - master
     tags:
       - '*'
   pull_request:
@@ -18,11 +16,14 @@ jobs:
     steps:
       - uses: actions/checkout@master
 
-      - uses: actions/setup-node@v3
+      # See {https://github.com/marketplace/actions/setup-node-js-for-use-with-actions}
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: '16.x'
+          node-version: '18.20.6'
 
-      - run: npm install
+      - name: Install dependencies
+        run: npm install
 
-      - run: npm test
-  # See {https://github.com/marketplace/actions/setup-node-js-for-use-with-actions}
+      - name: Run test suit
+        run: npm test

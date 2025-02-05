@@ -1,0 +1,15 @@
+/*!
+ * CSS with media query to be parsed.
+ *
+ * This files has a media query that should be parsed as media property.
+ * cssmedia property should be override this.
+ *
+ * @cssmedia print
+ */
+
+body {
+    /* With media query */
+    @media only screen and (max-width: 600px) {
+        color: black;
+    }
+}

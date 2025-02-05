@@ -1,6 +1,84 @@
 const fs = require( 'fs' );
 const crypto = require( 'crypto' );
-const glob = require( 'glob' );
+const { glob } = require( 'glob' )
+const { execSync, spawnSync } = require("child_process");
+
+/**
+ * @typedef Path
+ * @type {object}
+ * @property {string} dir    - Parent directory.
+ * @property {number} order  - Order. Lower processed first.
+ * @property {string[]} path - Array of file path.
+ */
+
+/**
+ * Add path by order.
+ *
+ * @param {Path[]} paths
+ * @param {string}   newPath
+ * @return {void}
+ */
+const addPath = ( paths, newPath ) => {
+	const pathParts = newPath.split( '/' ).filter( path => path.length >= 1 );
+	const length = pathParts.length;
+	const lastName = pathParts.pop();
+	const parentDir = pathParts.join( '/' );
+	let index = -1;
+	for ( let i = 0; i < paths.length; i++ ) {
+		if ( paths[ i ].dir === parentDir ) {
+			index = i;
+			break;
+		}
+	}
+	if ( 0 <= index ) {
+		// Already exists.
+		paths[ index ].path.push( [ parentDir, lastName ].join( '/' ) );
+	} else {
+		// Add new path.
+		paths.push( {
+			dir: parentDir, order: length, path: [ [ parentDir, lastName ].join( '/' ) ],
+		} );
+	}
+	paths.sort( ( a, b ) => {
+		if ( a.order === b.order ) {
+			return 0;
+		} else {
+			return a.order < b.order ? -1 : 1;
+		}
+	} );
+}
+
+/**
+ * Extract license header from JS file.
+ *
+ * @param {string} path
+ * @param {string} src
+ * @param {string} dest
+ * @return {boolean}
+ */
+const extractHeaderToLicense = ( path, src, dest ) => {
+	const target = path.replace( src, dest ) + '.LICENSE.txt';
+	const content = fs.readFileSync( path, 'utf8' );
+	if ( !content ) {
+		return false;
+	}
+	const match = content.match( /^(\/\*{1,2}!.*?\*\/)/ms );
+	if ( !match ) {
+		return false;
+	}
+	fs.writeFileSync( target, match[ 1 ] );
+	return true;
+}
+
+/**
+ * Check if wp-scripts is available.
+ *
+ * @returns {boolean}
+ */
+function isWordPressScriptsAvailable() {
+	const result = spawnSync("npm", ["list", "@wordpress/scripts"], { encoding: "utf-8" });
+	return result.stdout.match( /@wordpress\/scripts/ms );
+}
 
 /**
  * Parse header to grab information.
@@ -8,14 +86,20 @@ const glob = require( 'glob' );
  * @param {object}   object      Object to assign.
  * @param {string}   fileContent Line string to parse.
  * @param {string[]} deps        Additional dependencies.
+ * @param {number}   max_scan    Maximum lines to scan.
  * @return {object}
  */
-function scanHeader( object, fileContent, deps ) {
-	if ( ! deps ) {
+function scanHeader( object, fileContent, deps, max_scan = 60 ) {
+	if ( !deps ) {
 		deps = [];
 	}
-	fileContent.toString().split( "\n" ).map( ( line, index ) => {
-		if ( ! line.match( /^[ *]*(wp|@)(deps|handle|version|footer|media)=?(.*)$/ ) ) {
+	lines = fileContent.toString().split( "\n" );
+	lines.forEach( ( line, i ) => {
+		// If limit exceeded, stop scanning.
+		if ( i + 1 > max_scan ) {
+			return;
+		}
+		if ( ! line.match( /^[ *]*(wp|@)(deps|handle|version|footer|media|strategy|cssmedia)=?(.*)$/ ) ) {
 			// This is not header. Skip.
 			return;
 		}
@@ -24,12 +108,20 @@ function scanHeader( object, fileContent, deps ) {
 		let value = RegExp.$3.trim();
 		switch ( key ) {
 			case 'version':
-			case 'media':
 			case 'handle':
+			case 'strategy':
 				object[ key ] = value;
 				break;
+			case 'media':
+				if ( ! object.media ) {
+					object.media = value;
+				}
+				break;
+			case 'cssmedia':
+				object.media = value;
+				break;
 			case 'footer':
-				object.footer = ! ( 'false' === value );
+				object.footer = !( 'false' === value );
 				break;
 			case 'deps':
 				value.split( ',' ).map( ( dep ) => {
@@ -55,21 +147,22 @@ function scanHeader( object, fileContent, deps ) {
  */
 function grabDeps( file, suffix = '', version = '0.0.0' ) {
 	const info = {
-		handle: file.split( '/' ).slice( -1 )[0].replace( /\.(js|jsx|css|scss)$/, '' ),
+		handle: file.split( '/' ).slice( -1 )[ 0 ].replace( /\.(js|jsx|css|scss)$/, '' ),
 		path: file,
 		ext: /\.js$/.test( file ) ? 'js' : 'css',
 		hash: '',
 		version,
 		deps: [],
 		footer: true,
-		media: 'all'
+		media: '',
+		strategy: '',
 	};
 	if ( '' === suffix ) {
 		suffix = '.LICENSE.txt';
 	}
 	let fileToScan = file;
 	let licenseTxt = '';
-	switch ( typeof suffix) {
+	switch ( typeof suffix ) {
 		case 'string':
 			if ( suffix ) {
 				licenseTxt = file + suffix;
@@ -85,7 +178,7 @@ function grabDeps( file, suffix = '', version = '0.0.0' ) {
 	// Create hash.
 	let hashOriginal = false;
 	if ( licenseTxt && fs.existsSync( licenseTxt ) ) {
-		fileToScan   = licenseTxt;
+		fileToScan = licenseTxt;
 		hashOriginal = true;
 	}
 
@@ -99,7 +192,7 @@ function grabDeps( file, suffix = '', version = '0.0.0' ) {
 			if ( assetsContent ) {
 				const match = assetsContent.match( /'dependencies' => array\(([^)]+)\)/ );
 				if ( match ) {
-					match[1].split( ',' ).forEach( ( dep ) => {
+					match[ 1 ].split( ',' ).forEach( ( dep ) => {
 						deps.push( dep.trim().replaceAll( "'", '' ) );
 					} );
 				}
@@ -117,12 +210,15 @@ function grabDeps( file, suffix = '', version = '0.0.0' ) {
 			md5hash.update( fileContent );
 		}
 		info.hash = md5hash.digest( 'hex' );
-		return scanHeader( info, fileContent, deps );
+		const scanned = scanHeader( info, fileContent, deps );
+		if ( ! scanned.media ) {
+			scanned.media = 'all';
+		}
+		return scanned;
 	} else {
 		return null;
 	}
 }
-
 
 /**
  * Scan directory and extract dependencies.
@@ -161,7 +257,72 @@ function dumpSetting( dirs, dump = './wp-dependencies.json', suffix = '', versio
 	fs.writeFileSync( dump, JSON.stringify( result, null, "\t" ) );
 }
 
+/**
+ * Compile JS in directory.
+ *
+ * wp-scripts does not support nested js directory.
+ * This function compiles all js files in the directory and keep the directory structure.
+ *
+ * 1. Compile all ES6+ or JSX files in the directory.
+ * 2. Remove block directory.
+ * 3. Extract license header to license.txt.
+ *
+ * @param {string} srcDir Source directory.
+ * @param {string} destDir Target directory.
+ * @param {string[]} extensions Extensions to compile.
+ * @returns {Promise}
+ */
+function compileDirectory( srcDir, destDir, extensions = [ 'js', 'jsx' ] ) {
+	// Remove trailing slashes.
+	srcDir =  srcDir.replace( /\/+$/, '' );
+	destDir =  destDir.replace( /\/+$/, '' );
+	const globDir = extensions.map( ext => `${srcDir}/**/*.${ext}` );
+	if ( ! isWordPressScriptsAvailable() ) {
+		return Promise.reject( new Error( 'This function requires @wordpress/scripts.' ) );
+	}
+	return glob( globDir ).then( res => {
+		/** @type {Path[]} paths */
+		const paths = [];
+		res.forEach( ( path ) => {
+			addPath( paths, path );
+		} );
+		// Run build
+		const errors = [];
+		paths.forEach( ( p ) => {
+			try {
+				execSync( `wp-scripts build ${ p.path.join( ' ' ) } --output-path=${ p.dir.replace( srcDir, destDir ) }` );
+			} catch ( e ) {
+				console.log( e );
+				errors.push( p.path.join( ', ' ) );
+			}
+		} );
+		if ( errors.length ) {
+			throw new Error( `Failed to build: ${ errors.join( ', ' ) }` );
+		}
+		return paths;
+	} ).then( ( paths ) => {
+		// Remove all block json.
+		return glob( [ `${destDir}/**/blocks`, `${destDir}/**/*.asset.php` ] ).then( res => {
+			execSync( `rm -rf ${ res.join( ' ' ) }` );
+			return res.length;
+		} );
+	} ).then( () => {
+		// Put license.txt.
+		return glob( globDir ).then( res => {
+			const result = { total: res.length, extracted: 0};
+			res.map( ( path ) => {
+				result.total++;
+				if ( extractHeaderToLicense( path, srcDir, destDir ) ) {
+					result.extracted++;
+				}
+			} );
+			return result;
+		} );
+	} );
+}
+
 module.exports.scanHeader = scanHeader;
 module.exports.grabDeps = grabDeps;
 module.exports.scanDir = scanDir;
 module.exports.dumpSetting = dumpSetting;
+module.exports.compileDirectory = compileDirectory;

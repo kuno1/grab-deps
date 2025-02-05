@@ -2,10 +2,11 @@ const assert = require( 'assert' );
 const { grabDeps } = require( '../index' );
 
 describe( 'Additional meta information', () => {
-	const js     = grabDeps( 'test/src/js/plugin-jquery.js' );
-	const js_no  = grabDeps( 'test/src/js/no-deps.js' );
-	const css    = grabDeps( 'test/src/css/bootstrap.css' );
-	const css_no = grabDeps( 'test/src/css/no-deps.css' );
+	const js        = grabDeps( 'test/src/js/plugin-jquery.js' );
+	const js_no     = grabDeps( 'test/src/js/no-deps.js' );
+	const css       = grabDeps( 'test/src/css/bootstrap.css' );
+	const css_no    = grabDeps( 'test/src/css/no-deps.css' );
+	const css_media = grabDeps( 'test/src/css/css-media.css' );
 
 	it( 'JS with @version', () => {
 		assert.equal( js.version, '2.0.0' );
@@ -53,6 +54,14 @@ describe( 'Additional meta information', () => {
 
 	it( 'CSS with @media', () => {
 		assert.equal( css_no.media, 'all' );
+	} );
+
+	it( 'JS with @strategy', () => {
+		assert.equal( js.strategy, 'defer' );
+	} );
+
+	it( 'CSS with media query', () => {
+		assert.equal( css_media.media, 'print' );
 	} );
 } );
 
