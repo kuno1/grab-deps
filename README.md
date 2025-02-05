@@ -29,14 +29,27 @@ assets
 
 And run this in your [npm scripts](https://docs.npmjs.com/misc/scripts) or [gulpfile.js](https://gulpjs.com/).
 
-```js
-// Import function.
-const { dumpSetting } = require('@kunoichi/grab-deps');
-// Dump JSON
-dumpSetting( 'assets' );
+### NPM Scripts
+
+Since version 2.0.0, CLI inter face is available.
+If you need traspiling JavaScripts with [@wordpress/scripts](https://www.npmjs.com/package/@wordpress/scripts), add dependencies.
+
+```json
+{
+	"dependencies": {
+		"@kunoichi/grab-deps": "^2.0.0",
+		"@wordpress/sripts": "^27.0.0"
+	},
+	"scripts": {
+	"dump": "grab-deps assets",
+	"transpile": "grab-deps js src/js assets/js"
+  }
+}
 ```
 
-For automatic dumping, watch assets directory.
+`grab-deps-image 'test/src/images/**/*.{jpg,png,gif,svg}' test/dist/images` is also available. See peer dependencies for more information.
+
+### Gulp
 
 ```js
 // gulpfile.js
@@ -56,7 +69,7 @@ gulp.task( 'watch', function () {
 } );
 ```
 
-Now you can get updated dump information whatever changes you made for assets.
+Now you can get updated dump information whatever changes you made for assets directory.
 
 ## Register Assets in WordPress
 

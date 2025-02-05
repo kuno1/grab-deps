@@ -1,6 +1,6 @@
 {
 	"name": "@kunoichi/grab-deps",
-	"version": "1.3.1",
+	"version": "2.0.0",
 	"description": "Grab dependencies from js/css files.",
 	"main": "index.js",
 	"scripts": {
