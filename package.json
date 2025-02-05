@@ -7,10 +7,13 @@
 		"test": "mocha",
 		"lint": "wp-scripts lint-js '{index.js,bin/grab-deps.mjs}'",
 		"format": "wp-scripts format '{index.js,bin/grab-deps.mjs}'",
-		"imagemin": "npx grab-deps-image 'test/src/images/**/*.{jpg,png,gif,svg}' test/dist/images"
+		"imagemin": "npx grab-deps-image 'test/src/images/**/*.{jpg,png,gif,svg}' test/dist/images",
+		"js": "npx grab-deps js 'test/assets/js' test/dist/js",
+		"dump": "npx grab-deps dump 'test/src'"
 	},
 	"bin": {
-		"grab-deps-image": "./bin/grab-images.mjs"
+		"grab-deps-image": "./bin/grab-images.mjs",
+		"grab-deps": "./bin/grab-deps.js"
 	},
 	"repository": {
 		"type": "git",
@@ -34,6 +37,9 @@
 		"imagemin-pngquant": "^10.0.0",
 		"imagemin-svgo": "^11.0.1",
 		"mocha": "^10.2.0"
+	},
+	"engines": {
+		"node": ">=18.0.0"
 	},
 	"volta": {
 		"node": "18.20.6"
