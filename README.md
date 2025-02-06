@@ -41,7 +41,7 @@ If you need traspiling JavaScripts with [@wordpress/scripts](https://www.npmjs.c
 		"@wordpress/sripts": "^27.0.0"
 	},
 	"scripts": {
-	"dump": "grab-deps assets",
+	"dump": "grab-deps dump assets",
 	"transpile": "grab-deps js src/js assets/js"
   }
 }
