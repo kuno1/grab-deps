@@ -2,7 +2,7 @@
 
 A toolset to extract dependencies information from js/css files in WordPress Development.
 
-![TEST](https://github.com/kuno1/grab-deps/workflows/Grab%20deps%20test./badge.svg?branch=master)
+[![TEST](https://github.com/kuno1/grab-deps/actions/workflows/npm.yml/badge.svg)](https://github.com/kuno1/grab-deps/actions/workflows/npm.yml)
 
 This library dump `wp-dependencies.json` which includes dependencies and path information about js/css.
 
