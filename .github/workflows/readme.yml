@@ -15,24 +15,26 @@ jobs:
         uses: actions/checkout@main
 
       - name: Install dependencies
-        run: pip install openai
+        run: pip install 'openai>=1,<2'
 
       - name: Translate README to Japanese
         run: |
           python - <<EOF
           import openai
+          from openai import OpenAI
 
           openai.api_key = "${{ secrets.KUNOICHI_OPENAI_API_KEY }}"
 
           def translate_to_japanese(text):
-              response = openai.ChatCompletion.create(
-                  model="gpt-4",
-                  messages=[
-                      {"role": "system", "content": "Translate this text from English to Japanese."},
-                      {"role": "user", "content": text}
-                  ]
-              )
-              return response["choices"][0]["message"]["content"]
+            client = OpenAI()
+            completion = client.chat.completions.create(
+              model='gpt-4o-mini',
+              messages=[
+                {"role": "system", "content": "Translate this text from English to Japanese."},
+                {"role": "user", "content": text}
+              ]
+            )
+            return completion.choices[0].message.content
 
           with open("README.md", "r", encoding="utf-8") as f:
               content = f.read()

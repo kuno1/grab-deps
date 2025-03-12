@@ -2,7 +2,7 @@
 
 A toolset to extract dependencies information from js/css files in WordPress Development.
 
-[日本語（Japanese）](https://github.com/kuno1/grab-deps/wiki/README%E2%80%90ja) is also available.
+[日本語（Japanese）](https://github.com/kuno1/grab-deps/wiki/README-ja) is also available.
 
 [![TEST](https://github.com/kuno1/grab-deps/actions/workflows/npm.yml/badge.svg)](https://github.com/kuno1/grab-deps/actions/workflows/npm.yml)
 
