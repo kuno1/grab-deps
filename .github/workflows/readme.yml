@@ -20,13 +20,10 @@ jobs:
       - name: Translate README to Japanese
         run: |
           python - <<EOF
-          import openai
           from openai import OpenAI
 
-          openai.api_key = "${{ secrets.KUNOICHI_OPENAI_API_KEY }}"
-
           def translate_to_japanese(text):
-            client = OpenAI()
+            client = OpenAI(api_key="${{ secrets.KUNOICHI_OPENAI_API_KEY }}")
             completion = client.chat.completions.create(
               model='gpt-4o-mini',
               messages=[
