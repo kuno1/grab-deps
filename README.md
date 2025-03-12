@@ -29,7 +29,7 @@ assets
   - style.css
 ```
 
-And run this in your [npm scripts](https://docs.npmjs.com/misc/scripts) or [gulpfile.js](https://gulpjs.com/).
+Define tasks below in your [npm scripts](https://docs.npmjs.com/misc/scripts) or [gulpfile.js](https://gulpjs.com/).
 
 ### NPM Scripts
 
