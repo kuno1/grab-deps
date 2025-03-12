@@ -1,0 +1,58 @@
+name: Update Wiki with Translated README
+
+on:
+  push:
+    paths:
+      - "README.md"
+    branches:
+      - master
+
+jobs:
+  translate_and_update_wiki:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@main
+
+      - name: Install dependencies
+        run: pip install openai
+
+      - name: Translate README to Japanese
+        run: |
+          python - <<EOF
+          import openai
+
+          openai.api_key = "${{ secrets.KUNOICHI_OPENAI_API_KEY }}"
+
+          def translate_to_japanese(text):
+              response = openai.ChatCompletion.create(
+                  model="gpt-4",
+                  messages=[
+                      {"role": "system", "content": "Translate this text from English to Japanese."},
+                      {"role": "user", "content": text}
+                  ]
+              )
+              return response["choices"][0]["message"]["content"]
+
+          with open("README.md", "r", encoding="utf-8") as f:
+              content = f.read()
+
+          translated = translate_to_japanese(content)
+
+          with open("README-ja.md", "w", encoding="utf-8") as f:
+              f.write(translated)
+          EOF
+
+      - name: Checkout Wiki repository
+        run: |
+          git clone https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git wiki
+          cp README-ja.md wiki/README-ja.md
+
+      - name: Commit and Push to Wiki
+        run: |
+          cd wiki
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add README-ja.md
+          git commit -m "Update Japanese README in Wiki"
+          git push
