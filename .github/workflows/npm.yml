@@ -3,7 +3,7 @@ name: Grab deps test.
 on:
   push:
     tags:
-      - '*'
+      - '*.*.*'
   pull_request:
     branches:
       - master
