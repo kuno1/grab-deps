@@ -1,6 +1,6 @@
 {
 	"name": "@kunoichi/grab-deps",
-	"version": "2.0.0",
+	"version": "2.0.1",
 	"description": "Grab dependencies from js/css files.",
 	"main": "index.js",
 	"scripts": {
@@ -28,9 +28,11 @@
 		"url": "https://github.com/kuno1/grab-deps/issues"
 	},
 	"homepage": "https://github.com/kuno1/grab-deps#readme",
+	"dependencies": {
+		"glob": "^11.0.1"
+	},
 	"devDependencies": {
 		"@wordpress/scripts": "^27.9.0",
-		"glob": "^11.0.1",
 		"imagemin": "^9.0.0",
 		"imagemin-gifsicle": "^7.0.0",
 		"imagemin-jpegtran": "^8.0.0",
