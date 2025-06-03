@@ -223,14 +223,14 @@ function grabDeps( file, suffix = '', version = '0.0.0' ) {
 /**
  * Scan directory and extract dependencies.
  *
- * @param {string|string[]} dirs    Directory file to scan.
+ * @param {string|string[]} dirs    Directory file to scan. CSV format is also supported.
  * @param {String|Function} suffix  Suffix for license file.
  * @param {String}          version Default version string.
  * @returns {Array}
  */
 function scanDir( dirs, suffix = '', version = '0.0.0' ) {
 	if ( 'string' === typeof dirs ) {
-		dirs = [ dirs ];
+		dirs = dirs.split( ',' );
 	}
 	const result = [];
 	dirs.forEach( ( dir ) => {
@@ -292,7 +292,12 @@ function compileDirectory( srcDir, destDir, extensions = [ 'js', 'jsx' ] ) {
 			try {
 				execSync( `wp-scripts build ${ p.path.join( ' ' ) } --output-path=${ p.dir.replace( srcDir, destDir ) }` );
 			} catch ( e ) {
-				console.log( e );
+				if ( e.stdout) {
+					console.log( e.stdout.toString() );
+				}
+				if ( e.stderr) {
+					console.log( e.stderr.toString() );
+				}
 				errors.push( p.path.join( ', ' ) );
 			}
 		} );
