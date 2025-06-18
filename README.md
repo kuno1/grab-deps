@@ -90,7 +90,12 @@ Add @params in license comment.
 console.log( 'This script runs jQuery Masonry.' );
 ```
 
+After adding @params to the license comment, run the script you set up earlier.
+```
+npm run dump
+```
 And you can get setting file `wp-dependencies.json` like this.
+
 
 ```json
 [
