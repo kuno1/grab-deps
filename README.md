@@ -126,7 +126,13 @@ add_action( 'init', function() {
         $url     = get_template_directory_uri() . '/' . $setting['path'];
         if ( 'js' === $setting['ext'] ) {
             // Register JavaScript.
-            wp_register_script( $handle, $url, $setting['deps'], $version, $setting['footer'] );
+            $script_setting = [
+            	'in_footer' => $setting['footer'],
+            ];
+            if ( in_array( $setting['strategy'], [ 'async', 'defer' ], true ) ) {
+            	$script_setting['strategy'] = $setting['strategy'];
+            }
+            wp_register_script( $handle, $url, $setting['deps'], $version, $script_setting );
             // You can do extra settings here.
         } else {
             // This is CSS.
