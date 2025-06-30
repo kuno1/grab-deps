@@ -90,7 +90,12 @@ Add @params in license comment.
 console.log( 'This script runs jQuery Masonry.' );
 ```
 
+After adding @params to the license comment, run the script you set up earlier.
+```
+npm run dump
+```
 And you can get setting file `wp-dependencies.json` like this.
+
 
 ```json
 [
@@ -127,11 +132,11 @@ add_action( 'init', function() {
             if ( in_array( $setting['strategy'], [ 'async', 'defer' ], true ) ) {
             	$script_setting['strategy'] = $setting['strategy'];
             }
-            wp_register_script( $handle, $url, $deps, $version, $setting['footer'] );
+            wp_register_script( $handle, $url, $setting['deps'], $version, $script_setting );
             // You can do extra settings here.
         } else {
             // This is CSS.
-            wp_register_style( $handle, $url, $deps, $version, $setting['media'] ); 
+            wp_register_style( $handle, $url, $setting['deps'], $version, $setting['media'] ); 
         }
     }
 } );
