@@ -2,6 +2,7 @@ const fs = require( 'fs' );
 const crypto = require( 'crypto' );
 const { glob } = require( 'glob' )
 const { execSync, spawnSync } = require("child_process");
+const path = require( 'path' );
 
 /**
  * @typedef Path
@@ -132,6 +133,109 @@ function isWordPressScriptsAvailable() {
 }
 
 /**
+ * Read grab-deps configuration from package.json.
+ *
+ * @returns {object}
+ */
+function readGrabDepsConfig() {
+	const packageJsonPath = path.join( process.cwd(), 'package.json' );
+	if ( ! fs.existsSync( packageJsonPath ) ) {
+		return {};
+	}
+
+	const packageJson = JSON.parse( fs.readFileSync( packageJsonPath, 'utf8' ) );
+	const config = packageJson.grabDeps || {};
+
+	// Set default values
+	return {
+		namespace: config.namespace || packageJson.name?.replace( /[@\/]/g, '' ) || 'mylib',
+		srcDir: config.srcDir || 'src',
+		...config
+	};
+}
+
+/**
+ * Generate handle name based on folder structure.
+ *
+ * @param {string} filePath - File path relative to srcDir
+ * @param {string} srcDir - Source directory
+ * @param {string} namespace - Namespace prefix
+ * @returns {string}
+ */
+function generateHandleName( filePath, srcDir, namespace ) {
+	// Remove srcDir from path and file extension
+	const relativePath = path.relative( srcDir, filePath );
+	const pathWithoutExt = relativePath.replace( /\.(js|jsx|css|scss)$/, '' );
+
+	// Convert path separators to dashes
+	const pathParts = pathWithoutExt.split( path.sep );
+	const handleName = `${namespace}-${pathParts.join( '-' )}`;
+
+	return handleName;
+}
+
+/**
+ * Generate temporary webpack config with grab-deps settings.
+ *
+ * @param {string} srcDir - Source directory
+ * @param {string} destDir - Destination directory
+ * @returns {string} - Path to temporary webpack config
+ */
+function generateTempWebpackConfig( srcDir, destDir ) {
+	const config = readGrabDepsConfig();
+	const tempConfigPath = path.join( process.cwd(), '.grab-deps-webpack.config.js' );
+
+	// Load base webpack config from @wordpress/scripts
+	const baseConfigPath = require.resolve( '@wordpress/scripts/config/webpack.config.js' );
+
+	const configContent = `
+const baseConfig = require( '${baseConfigPath}' );
+const DependencyExtractionWebpackPlugin = require( '@wordpress/dependency-extraction-webpack-plugin' );
+
+// Custom grab-deps configuration
+const grabDepsConfig = ${JSON.stringify( config, null, 2 )};
+
+// Check if user has custom webpack.config.js
+let userConfig = {};
+try {
+	userConfig = require( '${path.join( process.cwd(), 'webpack.config.js' )}' );
+} catch ( e ) {
+	// No user config
+}
+
+// Merge configurations
+const mergedConfig = {
+	...baseConfig,
+	...userConfig,
+	plugins: [
+		...(baseConfig.plugins || []).filter( p => !(p instanceof DependencyExtractionWebpackPlugin) ),
+		...(userConfig.plugins || []).filter( p => !(p instanceof DependencyExtractionWebpackPlugin) ),
+		new DependencyExtractionWebpackPlugin( {
+			useDefaults: true,
+			// Custom handle generation will be added here in future versions
+		} )
+	]
+};
+
+module.exports = mergedConfig;
+`;
+
+	fs.writeFileSync( tempConfigPath, configContent );
+	return tempConfigPath;
+}
+
+/**
+ * Clean up temporary webpack config file.
+ *
+ * @param {string} configPath - Path to temporary config file
+ */
+function cleanupTempConfig( configPath ) {
+	if ( fs.existsSync( configPath ) ) {
+		fs.unlinkSync( configPath );
+	}
+}
+
+/**
  * Parse header to grab information.
  *
  * @param {object}   object      Object to assign.
@@ -197,8 +301,11 @@ function scanHeader( object, fileContent, deps, max_scan = 60 ) {
  * @returns {object|null}
  */
 function grabDeps( file, suffix = '', version = '0.0.0' ) {
+	const config = readGrabDepsConfig();
+	let handleName = file.split( '/' ).slice( -1 )[ 0 ].replace( /\.(js|jsx|css|scss)$/, '' );
+
 	const info = {
-		handle: file.split( '/' ).slice( -1 )[ 0 ].replace( /\.(js|jsx|css|scss)$/, '' ),
+		handle: handleName,
 		path: file,
 		ext: /\.js$/.test( file ) ? 'js' : 'css',
 		hash: '',
@@ -282,6 +389,23 @@ function grabDeps( file, suffix = '', version = '0.0.0' ) {
 		if ( ! scanned.media ) {
 			scanned.media = 'all';
 		}
+
+		// Apply folder-based handle name only if @handle is not explicitly set and autoHandleGeneration is enabled
+		const originalHandle = file.split( '/' ).slice( -1 )[ 0 ].replace( /\.(js|jsx|css|scss)$/, '' );
+		if ( scanned.handle === originalHandle && config.autoHandleGeneration && config.namespace && config.srcDir ) {
+			try {
+				const srcDirPath = path.resolve( config.srcDir );
+				const filePath = path.resolve( file );
+
+				// Check if file is within the configured source directory
+				if ( filePath.startsWith( srcDirPath ) ) {
+					scanned.handle = generateHandleName( file, config.srcDir, config.namespace );
+				}
+			} catch ( e ) {
+				// Fall back to default handle name
+			}
+		}
+
 		return scanned;
 	} else {
 		return null;
