@@ -104,4 +104,24 @@ describe('ES Module Export Detection', function() {
         assert.ok(exports.named.includes('DataProcessor'));
         assert.ok(exports.default);
     });
+
+    it('Should handle export default with variable name', function() {
+        const result = grabDeps('test/src/js/components/list.js');
+
+        // Should detect default export with variable name
+        assert.strictEqual(result.handle, 'testns-js-components-list');
+        assert.ok(result.globalRegistration);
+        assert.ok(result.globalRegistration.includes('window.testns.js.components.list = list;'));
+    });
+
+    it('Should handle default import dependencies', function() {
+        const result = grabDeps('test/src/js/default-import-test.js');
+
+        // Should detect default import dependency
+        assert.strictEqual(result.handle, 'testns-js-default-import-test');
+        assert.ok(result.deps.includes('testns-js-components-list'));
+        assert.ok(result.globalRegistration);
+        assert.ok(result.globalRegistration.includes('renderList: renderList'));
+        assert.ok(result.globalRegistration.includes('testDefaultImport: testDefaultImport'));
+    });
 });

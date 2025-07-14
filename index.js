@@ -301,10 +301,17 @@ function parseExports( fileContent ) {
 		exports.named.push( ...items );
 	}
 
-	// Match default export
-	const defaultExportRegex = /export\s+default\s+/;
-	if ( defaultExportRegex.test( fileContent ) ) {
-		exports.default = true;
+	// Match default export with variable name
+	const defaultExportRegex = /export\s+default\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/;
+	const defaultMatch = defaultExportRegex.exec( fileContent );
+	if ( defaultMatch ) {
+		exports.default = defaultMatch[1]; // variable name
+	} else {
+		// Check for other default export patterns (expressions, etc.)
+		const defaultExportPattern = /export\s+default\s+/;
+		if ( defaultExportPattern.test( fileContent ) ) {
+			exports.default = true; // expression or other pattern
+		}
 	}
 
 	// Remove duplicates
@@ -350,7 +357,13 @@ function generateGlobalRegistration( filePath, srcDir, namespace, exports ) {
 
 	// Register default export
 	if ( exports.default ) {
-		code += `${globalPath}.default = ${globalPath}.default || {};\n`;
+		if ( typeof exports.default === 'string' ) {
+			// export default variableName - assign the variable directly to the global path
+			code += `${globalPath} = ${exports.default};\n`;
+		} else {
+			// export default expression - assign to .default property
+			code += `${globalPath}.default = ${globalPath}.default || {};\n`;
+		}
 	}
 
 	return code;
