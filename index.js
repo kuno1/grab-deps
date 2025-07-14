@@ -54,20 +54,71 @@ const addPath = ( paths, newPath ) => {
  * @param {string} path
  * @param {string} src
  * @param {string} dest
+ * @param {string[]} deps - Dependencies from asset.php
  * @return {boolean}
  */
-const extractHeaderToLicense = ( path, src, dest ) => {
+const extractHeaderToLicense = ( path, src, dest, deps = [] ) => {
 	const target = path.replace( src, dest ) + '.LICENSE.txt';
 	const content = fs.readFileSync( path, 'utf8' );
 	if ( !content ) {
 		return false;
 	}
+
+	let licenseContent = '';
+
+	// 既存のライセンスヘッダーを取得
 	const match = content.match( /^(\/\*{1,2}!.*?\*\/)/ms );
-	if ( !match ) {
-		return false;
+	if ( match ) {
+		licenseContent = match[ 1 ];
 	}
-	fs.writeFileSync( target, match[ 1 ] );
-	return true;
+
+	// 依存関係情報を統合
+	if ( deps.length > 0 ) {
+		// 既存のライセンスヘッダーから既存の依存関係を取得
+		const existingDeps = [];
+		if ( licenseContent ) {
+			const existingDepsMatch = licenseContent.match( /^\s*\*\s*@deps\s+([^\n*]+)/gm );
+			if ( existingDepsMatch ) {
+				existingDepsMatch.forEach( match => {
+					const depsLine = match.replace( /^\s*\*\s*@deps\s+/, '' ).trim();
+					depsLine.split( ',' ).forEach( dep => {
+						const trimmedDep = dep.trim();
+						if ( trimmedDep && !existingDeps.includes( trimmedDep ) ) {
+							existingDeps.push( trimmedDep );
+						}
+					} );
+				} );
+			}
+		}
+
+		// 新しい依存関係を追加（重複を除去）
+		const allDeps = [ ...existingDeps ];
+		deps.forEach( dep => {
+			if ( !allDeps.includes( dep ) ) {
+				allDeps.push( dep );
+			}
+		} );
+
+		if ( allDeps.length > 0 ) {
+			if ( licenseContent ) {
+				// 既存のライセンスヘッダーから @deps 行を削除
+				licenseContent = licenseContent.replace( /^\s*\*\s*@deps\s+[^*\n]+\n?/gm, '' );
+				// 統合された依存関係情報を追加
+				const depsComment = `\n/*!\n * @deps ${ allDeps.join( ', ' ) }\n */`;
+				licenseContent += depsComment;
+			} else {
+				// ライセンスヘッダーがない場合、依存関係情報のみを追加
+				licenseContent = `/*!\n * @deps ${ allDeps.join( ', ' ) }\n */`;
+			}
+		}
+	}
+
+	if ( licenseContent ) {
+		fs.writeFileSync( target, licenseContent );
+		return true;
+	}
+
+	return false;
 }
 
 /**
@@ -210,6 +261,23 @@ function grabDeps( file, suffix = '', version = '0.0.0' ) {
 			md5hash.update( fileContent );
 		}
 		info.hash = md5hash.digest( 'hex' );
+
+		// LICENSE.txtファイルから@deps情報を読み取る
+		if ( hashOriginal && licenseTxt ) {
+			const licenseDepsMatch = fileContent.match( /^\s*\*\s*@deps\s+([^\n*]+)/gm );
+			if ( licenseDepsMatch ) {
+				licenseDepsMatch.forEach( match => {
+					const depsLine = match.replace( /^\s*\*\s*@deps\s+/, '' ).trim();
+					depsLine.split( ',' ).forEach( dep => {
+						const trimmedDep = dep.trim();
+						if ( trimmedDep && !deps.includes( trimmedDep ) ) {
+							deps.push( trimmedDep );
+						}
+					} );
+				} );
+			}
+		}
+
 		const scanned = scanHeader( info, fileContent, deps );
 		if ( ! scanned.media ) {
 			scanned.media = 'all';
@@ -306,18 +374,41 @@ function compileDirectory( srcDir, destDir, extensions = [ 'js', 'jsx' ] ) {
 		}
 		return paths;
 	} ).then( ( paths ) => {
-		// Remove all block json.
-		return glob( [ `${destDir}/**/blocks`, `${destDir}/**/*.asset.php` ] ).then( res => {
-			execSync( `rm -rf ${ res.join( ' ' ) }` );
-			return res.length;
+		// 削除前にasset.phpファイルを解析して依存関係情報を取得
+		return glob( [ `${destDir}/**/*.asset.php` ] ).then( assetFiles => {
+			const dependencyMap = {};
+			assetFiles.forEach( assetFile => {
+				const jsFile = assetFile.replace( '.asset.php', '.js' );
+				const assetContent = fs.readFileSync( assetFile, 'utf8' );
+				if ( assetContent ) {
+					const match = assetContent.match( /'dependencies' => array\(([^)]+)\)/ );
+					if ( match ) {
+						const deps = [];
+						match[ 1 ].split( ',' ).forEach( ( dep ) => {
+							deps.push( dep.trim().replaceAll( "'", '' ) );
+						} );
+						dependencyMap[jsFile] = deps;
+					}
+				}
+			} );
+
+			// Remove all block json and asset.php files
+			return glob( [ `${destDir}/**/blocks`, `${destDir}/**/*.asset.php` ] ).then( res => {
+				if ( res.length > 0 ) {
+					execSync( `rm -rf ${ res.join( ' ' ) }` );
+				}
+				return { paths, dependencyMap };
+			} );
 		} );
-	} ).then( () => {
-		// Put license.txt.
+	} ).then( ( { paths, dependencyMap } ) => {
+		// license.txtを生成する際に依存関係情報を含める
 		return glob( globDir ).then( res => {
 			const result = { total: res.length, extracted: 0};
-			res.map( ( path ) => {
+			res.forEach( ( path ) => {
 				result.total++;
-				if ( extractHeaderToLicense( path, srcDir, destDir ) ) {
+				const destFile = path.replace( srcDir, destDir );
+				const deps = dependencyMap[destFile] || [];
+				if ( extractHeaderToLicense( path, srcDir, destDir, deps ) ) {
 					result.extracted++;
 				}
 			} );

@@ -29,9 +29,9 @@ describe('JS compile test', function () {
 		// Is file exists?
 		[
 			'test-build-sample.js',
-			'test-build-sample.js.LICENSE.txt',
+			'test-build-sample.LICENSE.txt',
 			'test-build-block.jsx.js',
-			'test-build-block.jsx.LICENSE.txt',
+			'test-build-block.LICENSE.txt',
 		].forEach( ( file ) => {
 			assert.strictEqual(fs.existsSync( `${destDir}/${file}` ), true, `${file} exists` );
 		});

@@ -26,3 +26,21 @@ describe( 'License.txt test.', () => {
 		} ).deps, [ 'jquery', 'jquery-ui-datepicker', 'wp-element', 'scriptaculous' ] );
 	} );
 } );
+
+describe( 'WordPress imports test.', () => {
+	it( 'WordPress imports from compiled file', () => {
+		const result = grabDeps( 'test/dist/js/wp/deps-wp-i18n.js' );
+		assert.deepEqual( result.deps, [ 'wp-api-fetch', 'wp-element', 'wp-i18n' ] );
+		assert.equal( result.handle, 'test-wp-imports' );
+	} );
+	it( 'Mixed @deps and imports - should have single @deps section', () => {
+		const result = grabDeps( 'test/dist/js/wp/mixed-deps.js' );
+		assert.deepEqual( result.deps, [ 'jquery', 'wp-blocks', 'wp-element', 'wp-i18n' ] );
+		assert.equal( result.handle, 'test-mixed-deps' );
+	} );
+	it( 'Duplicate dependencies - should remove duplicates', () => {
+		const result = grabDeps( 'test/dist/js/wp/duplicate-deps.js' );
+		assert.deepEqual( result.deps, [ 'wp-i18n', 'jquery', 'wp-element' ] );
+		assert.equal( result.handle, 'test-duplicate-deps' );
+	} );
+} );
