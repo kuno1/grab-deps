@@ -148,7 +148,7 @@ function readGrabDepsConfig() {
 
 	// Set default values
 	return {
-		namespace: config.namespace || packageJson.name?.replace( /[@\/]/g, '' ) || 'mylib',
+		namespace: config.namespace || '', // No default namespace - must be explicitly set
 		srcDir: config.srcDir || 'src',
 		...config
 	};
@@ -233,6 +233,127 @@ function cleanupTempConfig( configPath ) {
 	if ( fs.existsSync( configPath ) ) {
 		fs.unlinkSync( configPath );
 	}
+}
+
+/**
+ * Parse import statements from file content.
+ *
+ * @param {string} fileContent - File content to parse
+ * @param {string} namespace - Namespace prefix to look for
+ * @returns {string[]} - Array of namespace import paths
+ */
+function parseNamespaceImports( fileContent, namespace ) {
+	const imports = [];
+	const importRegex = /import\s+(?:(?:\{[^}]*\}|\w+|\*\s+as\s+\w+)(?:\s*,\s*(?:\{[^}]*\}|\w+|\*\s+as\s+\w+))*\s+from\s+)?['"]([^'"]+)['"]/g;
+
+	let match;
+	while ( ( match = importRegex.exec( fileContent ) ) !== null ) {
+		const importPath = match[1];
+
+		// Only process imports that start with namespace prefix (e.g., @mylib/)
+		if ( importPath.startsWith( `@${namespace}/` ) ) {
+			imports.push( importPath );
+		}
+	}
+
+	return imports;
+}
+
+/**
+ * Convert namespace import path to handle name.
+ *
+ * @param {string} importPath - Namespace import path (e.g., @mylib/utils/date)
+ * @param {string} namespace - Namespace prefix
+ * @returns {string} - Handle name
+ */
+function convertNamespaceImportToHandle( importPath, namespace ) {
+	// Remove @namespace/ prefix and convert to handle format
+	const pathWithoutNamespace = importPath.replace( `@${namespace}/`, '' );
+	const handleName = `${namespace}-${pathWithoutNamespace.replace( /\//g, '-' )}`;
+
+	return handleName;
+}
+
+/**
+ * Parse export statements from file content.
+ *
+ * @param {string} fileContent - File content to parse
+ * @returns {object} - Object containing exported items
+ */
+function parseExports( fileContent ) {
+	const exports = {
+		named: [], // Named exports: export const foo = ...
+		default: null, // Default export: export default ...
+		reexports: [] // Re-exports: export { foo } from './bar'
+	};
+
+	// Match named exports: export const/let/var/function/class
+	const namedExportRegex = /export\s+(?:const|let|var|function|class)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g;
+	let match;
+	while ( ( match = namedExportRegex.exec( fileContent ) ) !== null ) {
+		exports.named.push( match[1] );
+	}
+
+	// Match export statements: export { foo, bar }
+	const exportStatementRegex = /export\s*\{\s*([^}]+)\s*\}/g;
+	while ( ( match = exportStatementRegex.exec( fileContent ) ) !== null ) {
+		const items = match[1].split( ',' ).map( item => item.trim().split( /\s+as\s+/ )[0] );
+		exports.named.push( ...items );
+	}
+
+	// Match default export
+	const defaultExportRegex = /export\s+default\s+/;
+	if ( defaultExportRegex.test( fileContent ) ) {
+		exports.default = true;
+	}
+
+	// Remove duplicates
+	exports.named = [ ...new Set( exports.named ) ];
+
+	return exports;
+}
+
+/**
+ * Generate global registration code for a module.
+ *
+ * @param {string} filePath - Path to the module file
+ * @param {string} srcDir - Source directory
+ * @param {string} namespace - Namespace prefix
+ * @param {object} exports - Exported items from parseExports
+ * @returns {string} - Global registration code
+ */
+function generateGlobalRegistration( filePath, srcDir, namespace, exports ) {
+	// Generate namespace path: @namespace/utils/date -> window.namespace.utils.date
+	const relativePath = path.relative( srcDir, filePath );
+	const pathWithoutExt = relativePath.replace( /\.(js|jsx|ts|tsx)$/, '' );
+	const namespaceParts = pathWithoutExt.split( path.sep );
+	const globalPath = `window.${namespace}.${namespaceParts.join( '.' )}`;
+
+	let code = `// Global registration for ${filePath}\n`;
+
+	// Create namespace hierarchy
+	const parts = [ namespace, ...namespaceParts ];
+	for ( let i = 0; i < parts.length; i++ ) {
+		const currentPath = `window.${parts.slice( 0, i + 1 ).join( '.' )}`;
+		code += `${currentPath} = ${currentPath} || {};\n`;
+	}
+
+	// Register named exports
+	if ( exports.named.length > 0 ) {
+		code += `${globalPath} = Object.assign( ${globalPath}, {\n`;
+		exports.named.forEach( ( exportName, index ) => {
+			const comma = index < exports.named.length - 1 ? ',' : '';
+			code += `\t${exportName}: ${exportName}${comma}\n`;
+		} );
+		code += `} );\n`;
+	}
+
+	// Register default export
+	if ( exports.default ) {
+		code += `${globalPath}.default = ${globalPath}.default || {};\n`;
+	}
+
+	return code;
 }
 
 /**
@@ -406,6 +527,40 @@ function grabDeps( file, suffix = '', version = '0.0.0' ) {
 			}
 		}
 
+		// Parse namespace import statements and add to dependencies if enabled
+		if ( config.autoImportDetection && config.namespace ) {
+			try {
+				const namespaceImports = parseNamespaceImports( fileContent, config.namespace );
+				namespaceImports.forEach( importPath => {
+					const importHandle = convertNamespaceImportToHandle( importPath, config.namespace );
+					if ( importHandle && !scanned.deps.includes( importHandle ) ) {
+						scanned.deps.push( importHandle );
+					}
+				} );
+			} catch ( e ) {
+				// Fall back to default behavior
+			}
+		}
+
+		// Generate global registration code if enabled
+		if ( config.globalExportGeneration && config.namespace && config.srcDir && scanned.ext === 'js' ) {
+			try {
+				const srcDirPath = path.resolve( config.srcDir );
+				const filePath = path.resolve( file );
+
+				// Check if file is within the configured source directory
+				if ( filePath.startsWith( srcDirPath ) ) {
+					const exports = parseExports( fileContent );
+					if ( exports.named.length > 0 || exports.default ) {
+						const globalCode = generateGlobalRegistration( file, config.srcDir, config.namespace, exports );
+						scanned.globalRegistration = globalCode;
+					}
+				}
+			} catch ( e ) {
+				// Fall back to default behavior
+			}
+		}
+
 		return scanned;
 	} else {
 		return null;
@@ -546,3 +701,5 @@ module.exports.grabDeps = grabDeps;
 module.exports.scanDir = scanDir;
 module.exports.dumpSetting = dumpSetting;
 module.exports.compileDirectory = compileDirectory;
+module.exports.parseExports = parseExports;
+module.exports.generateGlobalRegistration = generateGlobalRegistration;
