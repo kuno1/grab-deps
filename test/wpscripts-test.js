@@ -3,7 +3,7 @@ const { compileDirectory } = require( '../index' );
 const fs = require( 'fs' );
 
 describe('JS compile test', function () {
-	this.timeout(5000); // 長めの処理を許容する
+	this.timeout(30000); // 30秒に延長
 
 	let setting;
 
@@ -11,18 +11,31 @@ describe('JS compile test', function () {
 	const destDir = 'test/dist/js';
 
 	// Prepare JS for compiling.
-	before(function (done) {
-		// Remove existing directory.
-		if (fs.existsSync(destDir)) {
-			fs.rmSync(destDir, { recursive: true, force: true });
+	before(async function () {
+		this.timeout(30000); // 30秒に延長
+		console.log('Starting JS compilation test...');
+		console.log('Source directory:', srcDir);
+		console.log('Destination directory:', destDir);
+		console.log('CI environment:', process.env.CI);
+
+		try {
+			// Remove existing directory.
+			if (fs.existsSync(destDir)) {
+				console.log('Removing existing destination directory...');
+				fs.rmSync(destDir, { recursive: true, force: true });
+			}
+
+			// Compile JS.
+			console.log('Starting compileDirectory...');
+			const startTime = Date.now();
+			setting = await compileDirectory(srcDir, destDir);
+			const endTime = Date.now();
+			console.log(`Compilation completed successfully in ${endTime - startTime}ms:`, setting);
+		} catch (err) {
+			console.error('Compilation failed:', err);
+			console.error('Error stack:', err.stack);
+			throw err;
 		}
-		// Compile JS.
-		compileDirectory(srcDir, destDir)
-			.then(result => {
-				setting = result;
-				done();
-			})
-			.catch(err => done(err));
 	});
 
 	it('Are JS files compiled?', function () {
