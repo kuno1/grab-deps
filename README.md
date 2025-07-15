@@ -43,8 +43,8 @@ If you need traspiling JavaScripts with [@wordpress/scripts](https://www.npmjs.c
 		"@wordpress/sripts": "^27.0.0"
 	},
 	"scripts": {
-	"dump": "grab-deps dump assets",
-	"transpile": "grab-deps js src/js assets/js"
+		"dump": "grab-deps dump assets",
+		"transpile": "grab-deps js src/js assets/js"
   }
 }
 ```
@@ -134,6 +134,10 @@ add_action( 'init', function() {
             }
             wp_register_script( $handle, $url, $setting['deps'], $version, $script_setting );
             // You can do extra settings here.
+						// For example, set script translation.
+						if ( in_array( 'wp-i18n', $setting['deps'], true ) ) {
+							wp_set_script_translation();
+						}
         } else {
             // This is CSS.
             wp_register_style( $handle, $url, $setting['deps'], $version, $setting['media'] ); 
@@ -143,6 +147,194 @@ add_action( 'init', function() {
 ```
 
 Now you can enqueue any of your scripts/styles with `wp_enqueue_script( 'my-app-js' )` or `wp_enqueue_style( 'my-blocks-alert-css' )`.
+
+## ES Module Support (v3.0.0+)
+
+Since version 3.0.0, grab-deps supports ES Module format with automatic global registration code generation. This feature enables you to write modern JavaScript modules while maintaining WordPress compatibility.
+
+### Benefits
+
+- **Better Development Experience**: Write standard ES Module syntax
+- **Test-Friendly**: Easy mocking and testing with Jest and other testing frameworks
+- **IDE Support**: Full autocomplete, type checking, and refactoring support
+- **Single Codebase**: Use the same code for development/testing (ES Modules) and production (global variables)
+
+### Configuration
+
+Add configuration to your `package.json`:
+
+```json
+{
+  "grabDeps": {
+    "namespace": "mylib",
+    "srcDir": "src",
+    "autoHandleGeneration": true,
+    "autoImportDetection": true,
+    "globalExportGeneration": true
+  }
+}
+```
+
+#### Configuration Options
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `namespace` | Yes | Namespace prefix for your library (e.g., "mylib" for `@mylib/utils/date`) |
+| `srcDir` | No | Source directory (default: "src") |
+| `autoHandleGeneration` | No | Auto-generate handle names based on folder structure |
+| `autoImportDetection` | No | Auto-detect namespace imports and add as dependencies |
+| `globalExportGeneration` | No | Generate global registration code for ES modules |
+
+### Writing ES Modules
+
+Write your JavaScript in standard ES Module format:
+
+```javascript
+// src/utils/date.js
+/*!
+ * Date utility functions
+ * @version 1.0.0
+ */
+
+export const formatDate = (date) => {
+    return date.toISOString().split('T')[0];
+};
+
+export const parseDate = (dateString) => {
+    return new Date(dateString);
+};
+
+export const addDays = (date, days) => {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+};
+
+export default {
+    formatDate,
+    parseDate,
+    addDays
+};
+```
+
+### Using Namespace Imports
+
+Import modules using your configured namespace:
+
+```javascript
+// src/app.js
+/*!
+ * Main application
+ * @version 1.0.0
+ */
+
+import { formatDate, parseDate } from '@mylib/utils/date';
+import { helper } from './helper.js';  // Relative imports work normally
+
+export const initApp = () => {
+    const today = new Date();
+    console.log('Today:', formatDate(today));
+    
+    const parsed = parseDate('2023-01-15');
+    console.log('Parsed:', parsed);
+};
+
+export const getAppVersion = () => {
+    return '1.0.0';
+};
+```
+
+### Generated Output
+
+When you run `grab-deps dump`, the tool will:
+
+1. **Auto-generate handle names** based on folder structure:
+   - `src/utils/date.js` → `mylib-utils-date`
+   - `src/app.js` → `mylib-app`
+
+2. **Auto-detect dependencies** from namespace imports:
+   - `@mylib/utils/date` → `mylib-utils-date` dependency
+
+3. **Generate global registration code** for browser compatibility:
+
+```javascript
+// Auto-generated global registration code
+window.mylib = window.mylib || {};
+window.mylib.utils = window.mylib.utils || {};
+window.mylib.utils.date = Object.assign(window.mylib.utils.date || {}, {
+    formatDate: formatDate,
+    parseDate: parseDate,
+    addDays: addDays
+});
+window.mylib.utils.date.default = window.mylib.utils.date.default || {};
+```
+
+### JSON Output Example
+
+```json
+[
+  {
+    "handle": "mylib-utils-date",
+    "path": "src/utils/date.js",
+    "ext": "js",
+    "version": "1.0.0",
+    "deps": [],
+    "footer": true,
+    "media": "all",
+    "strategy": "",
+    "hash": "abc123...",
+    "globalRegistration": "// Global registration code here..."
+  },
+  {
+    "handle": "mylib-app",
+    "path": "src/app.js",
+    "ext": "js",
+    "version": "1.0.0",
+    "deps": ["mylib-utils-date"],
+    "footer": true,
+    "media": "all",
+    "strategy": "",
+    "hash": "def456...",
+    "globalRegistration": "// Global registration code here..."
+  }
+]
+```
+
+### WordPress Integration
+
+The generated global registration code can be included in your WordPress theme/plugin to make ES modules available as global variables:
+
+```php
+// In your theme/plugin
+add_action('wp_enqueue_scripts', function() {
+    $settings = json_decode(file_get_contents(__DIR__ . '/wp-dependencies.json'), true);
+    
+    foreach ($settings as $setting) {
+        // Register the script normally
+        wp_register_script(
+            $setting['handle'],
+            get_template_directory_uri() . '/' . $setting['path'],
+            $setting['deps'],
+            $setting['version'],
+            ['in_footer' => $setting['footer']]
+        );
+        
+        // Add global registration code if available
+        if (!empty($setting['globalRegistration'])) {
+            wp_add_inline_script($setting['handle'], $setting['globalRegistration'], 'after');
+        }
+    }
+});
+```
+
+### Development Workflow
+
+1. **Write ES Modules**: Use standard `export`/`import` syntax
+2. **Run Tests**: Use Jest or other testing frameworks directly on ES modules
+3. **Build for Production**: `grab-deps` generates WordPress-compatible global variables
+4. **Deploy**: WordPress loads scripts with global registration code
+
+This approach gives you the best of both worlds: modern development experience with ES modules and WordPress compatibility through global variables.
 
 ## Supported Header Info
 
