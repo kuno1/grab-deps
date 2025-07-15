@@ -6,7 +6,7 @@
 	"scripts": {
 		"test": "mocha",
 		"lint": "wp-scripts lint-js '{index.js,bin/grab-deps.mjs}'",
-		"format": "wp-scripts format '{index.js,bin/grab-deps.mjs}'",
+		"format": "eslint --fix --c ./node_modules/@wordpress/scripts/config/.eslintrc.js '{index.js,bin/grab-deps.mjs}'",
 		"imagemin": "npx grab-deps-image 'test/src/images/**/*.{jpg,png,gif,svg}' test/dist/images",
 		"js": "npx grab-deps js 'test/assets/js' test/dist/js",
 		"dump": "npx grab-deps dump 'test/src'"
