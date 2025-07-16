@@ -28,7 +28,7 @@ describe('JS compile test', function () {
 			// Compile JS.
 			console.log('Starting compileDirectory...');
 			const startTime = Date.now();
-			setting = await compileDirectory(srcDir, destDir);
+			setting = await compileDirectory(srcDir, destDir, ['js', 'jsx'], 'test/assets/.grab-deps.json');
 			const endTime = Date.now();
 			console.log(`Compilation completed successfully in ${endTime - startTime}ms:`, setting);
 		} catch (err) {
@@ -47,6 +47,19 @@ describe('JS compile test', function () {
 			'test-build-block.jsx.LICENSE.txt',
 		].forEach( ( file ) => {
 			assert.strictEqual(fs.existsSync( `${destDir}/${file}` ), true, `${file} exists` );
+		});
+	});
+
+	it('ES6 export files should not be empty', function () {
+		// Check that ES6 export files are not empty
+		[
+			'test-es6-export-issue.js',
+			'test-es6-exports.js',
+		].forEach( ( file ) => {
+			const filePath = `${destDir}/${file}`;
+			assert.strictEqual(fs.existsSync( filePath ), true, `${file} exists` );
+			const content = fs.readFileSync( filePath, 'utf8' );
+			assert.ok(content.length > 0, `${file} should not be empty (actual length: ${content.length})`);
 		});
 	});
 

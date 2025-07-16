@@ -260,16 +260,23 @@ function dumpSetting(
  * wp-scripts does not support nested js directory.
  * This function compiles all js files in the directory and keep the directory structure.
  *
- * 1. Compile all ES6+ or JSX files in the directory.
- * 2. Remove block directory.
- * 3. Extract license header to license.txt.
+ * 1. Pre-process ES6 export files to CommonJS format in temporary directory.
+ * 2. Compile all ES6+ or JSX files in the directory.
+ * 3. Remove block directory.
+ * 4. Extract license header to license.txt.
  *
  * @param {string}   srcDir     Source directory.
  * @param {string}   destDir    Target directory.
  * @param {string[]} extensions Extensions to compile.
+ * @param {string}   configPath Optional path to config file.
  * @return {Promise} Promise that resolves with compilation results
  */
-function compileDirectory( srcDir, destDir, extensions = [ 'js', 'jsx' ] ) {
+function compileDirectory(
+	srcDir,
+	destDir,
+	extensions = [ 'js', 'jsx' ],
+	configPath = null
+) {
 	// Remove trailing slashes.
 	srcDir = srcDir.replace( /\/+$/, '' );
 	destDir = destDir.replace( /\/+$/, '' );
@@ -279,19 +286,62 @@ function compileDirectory( srcDir, destDir, extensions = [ 'js', 'jsx' ] ) {
 		);
 	}
 	const globDir = extensions.map( ( ext ) => `${ srcDir }/**/*.${ ext }` );
+	const tempDir = '.grab-deps-temp';
+
 	return glob( globDir )
 		.then( ( res ) => {
+			// Pre-process ES6 export files if needed
+			const config = readGrabDepsConfig( configPath );
+
+			// Create temporary directory for pre-processing
+			if ( fs.existsSync( tempDir ) ) {
+				execSync( `rm -rf ${ tempDir }` );
+			}
+			fs.mkdirSync( tempDir, { recursive: true } );
+
+			// Process files and create temporary versions if needed
+			res.forEach( ( filePath ) => {
+				if (
+					config.globalExportGeneration &&
+					config.namespace &&
+					config.srcDir
+				) {
+					const fileContent = fs.readFileSync( filePath, 'utf8' );
+					const exports = parseExports( fileContent );
+
+					// If file has exports, create CommonJS version in temp directory
+					if ( exports.named.length > 0 || exports.default ) {
+						const tempFilePath = path.join(
+							tempDir,
+							path.basename( filePath )
+						);
+						const convertedContent = convertES6ToCommonJS(
+							fileContent,
+							filePath,
+							srcDir,
+							config.namespace,
+							exports
+						);
+						fs.writeFileSync( tempFilePath, convertedContent );
+						// Replace original file temporarily
+						fs.writeFileSync( filePath + '.backup', fileContent );
+						fs.writeFileSync( filePath, convertedContent );
+					}
+				}
+			} );
+
 			/** @type {import('./lib/build-utils').Path[]} pathsArray */
 			const pathsArray = [];
 			res.forEach( ( filePath ) => {
 				addPath( pathsArray, filePath );
 			} );
-			// Run build
+
+			// Run build on processed files
 			const errors = [];
 			pathsArray.forEach( ( p ) => {
 				try {
 					execSync(
-						`wp-scripts build ${ p.path.join(
+						`npx wp-scripts build ${ p.path.join(
 							' '
 						) } --output-path=${ p.dir.replace( srcDir, destDir ) }`
 					);
@@ -307,6 +357,23 @@ function compileDirectory( srcDir, destDir, extensions = [ 'js', 'jsx' ] ) {
 					errors.push( p.path.join( ', ' ) );
 				}
 			} );
+
+			// Restore original files
+			res.forEach( ( filePath ) => {
+				if ( fs.existsSync( filePath + '.backup' ) ) {
+					fs.writeFileSync(
+						filePath,
+						fs.readFileSync( filePath + '.backup', 'utf8' )
+					);
+					fs.unlinkSync( filePath + '.backup' );
+				}
+			} );
+
+			// Clean up temp directory
+			if ( fs.existsSync( tempDir ) ) {
+				execSync( `rm -rf ${ tempDir }` );
+			}
+
 			if ( errors.length ) {
 				throw new Error( `Failed to build: ${ errors.join( ', ' ) }` );
 			}
@@ -353,54 +420,7 @@ function compileDirectory( srcDir, destDir, extensions = [ 'js', 'jsx' ] ) {
 			);
 		} )
 		.then( ( { pathsArray, dependencyMap } ) => {
-			// Process files and add global registration code if needed
-			const config = readGrabDepsConfig();
-
-			// If globalExportGeneration is enabled, process JS files
-			if (
-				config.globalExportGeneration &&
-				config.namespace &&
-				config.srcDir
-			) {
-				return glob( `${ destDir }/**/*.js` ).then( ( jsFiles ) => {
-					jsFiles.forEach( ( destFile ) => {
-						// Find corresponding source file
-						const srcFile = destFile.replace( destDir, srcDir );
-						if ( fs.existsSync( srcFile ) ) {
-							const srcContent = fs.readFileSync(
-								srcFile,
-								'utf8'
-							);
-							const exports = parseExports( srcContent );
-
-							if ( exports.named.length > 0 || exports.default ) {
-								// Generate global registration code
-								const globalCode = generateGlobalRegistration(
-									srcFile,
-									srcDir,
-									config.namespace,
-									exports
-								);
-
-								// Read the compiled file
-								let compiledContent = fs.readFileSync(
-									destFile,
-									'utf8'
-								);
-
-								// Append global registration code at the end
-								compiledContent += '\n\n' + globalCode;
-
-								// Write back to file
-								fs.writeFileSync( destFile, compiledContent );
-							}
-						}
-					} );
-
-					return { pathsArray, dependencyMap };
-				} );
-			}
-
+			// No post-processing needed, global registration is included in pre-processing
 			return { pathsArray, dependencyMap };
 		} )
 		.then( ( { dependencyMap } ) => {
@@ -425,6 +445,54 @@ function compileDirectory( srcDir, destDir, extensions = [ 'js', 'jsx' ] ) {
 				return result;
 			} );
 		} );
+}
+
+/**
+ * Convert ES6 exports to CommonJS format with global registration.
+ *
+ * @param {string} content   Source file content.
+ * @param {string} filePath  File path for global registration.
+ * @param {string} srcDir    Source directory.
+ * @param {string} namespace Global namespace.
+ * @param {Object} exports   Export information.
+ * @return {string} Converted content.
+ */
+function convertES6ToCommonJS( content, filePath, srcDir, namespace, exports ) {
+	// Remove export statements and convert to const declarations
+	let convertedContent = content;
+
+	// Convert named exports
+	exports.named.forEach( ( exportName ) => {
+		const exportRegex = new RegExp(
+			`export\\s+const\\s+${ exportName }\\s*=`,
+			'g'
+		);
+		convertedContent = convertedContent.replace(
+			exportRegex,
+			`const ${ exportName } =`
+		);
+	} );
+
+	// Convert default export
+	if ( exports.default ) {
+		convertedContent = convertedContent.replace(
+			/export\s+default\s+/,
+			'const defaultExport = '
+		);
+	}
+
+	// Generate global registration code
+	const globalCode = generateGlobalRegistration(
+		filePath,
+		srcDir,
+		namespace,
+		exports
+	);
+
+	// Append global registration
+	convertedContent += '\n\n' + globalCode;
+
+	return convertedContent;
 }
 
 // Export only the main public API functions
