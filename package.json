@@ -8,7 +8,7 @@
 		"lint": "wp-scripts lint-js '{index.js,lib/*.js,bin/grab-deps.js,bin/grab-images.mjs}'",
 		"format": "eslint --fix --c ./node_modules/@wordpress/scripts/config/.eslintrc.js '{index.js,lib/*.js,bin/grab-deps.js,bin/grab-images.mjs}'",
 		"imagemin": "npx grab-deps-image 'test/src/images/**/*.{jpg,png,gif,svg}' test/dist/images",
-		"js": "npx grab-deps js 'test/assets/js' test/dist/js",
+		"js": "npx grab-deps js 'test/assets/js' test/dist/js --config test/assets/.grab-deps.json",
 		"dump": "npx grab-deps dump 'test/src'"
 	},
 	"bin": {

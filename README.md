@@ -336,6 +336,21 @@ add_action('wp_enqueue_scripts', function() {
 
 This approach gives you the best of both worlds: modern development experience with ES modules and WordPress compatibility through global variables.
 
+## Advanced Features
+
+### JavaScript Compilation with @wordpress/scripts Integration
+
+The `grab-deps js` command provides advanced JavaScript compilation capabilities that override @wordpress/scripts functionality while leveraging webpack.config.js for enhanced processing.
+
+**Key Features:**
+- **ES6 Export Problem Resolution**: Automatically handles empty compiled files from ES6-only exports
+- **Global Registration Code Generation**: Converts ES modules to globally accessible variables
+- **Dependency Auto-Detection**: Extracts dependencies from asset.php files
+- **Hierarchical Directory Processing**: Maintains source directory structure
+
+For detailed technical information about the compilation process, see:
+📖 **[Architecture Documentation](docs/grab-deps-js-architecture.md)**
+
 ## Supported Header Info
 
 | Name      | Default                              | type    | Target | Possible Values |

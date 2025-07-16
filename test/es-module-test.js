@@ -57,12 +57,12 @@ describe('ES Module Export Detection', function() {
         assert.ok(globalCode.includes('window.testns.js.modules = window.testns.js.modules || {};'));
 
         // Should register named exports
-        assert.ok(globalCode.includes('formatDate = formatDate'));
-        assert.ok(globalCode.includes('parseDate = parseDate'));
-        assert.ok(globalCode.includes('addDays = addDays'));
+        assert.ok(globalCode.includes('formatDate: formatDate'));
+        assert.ok(globalCode.includes('parseDate: parseDate'));
+        assert.ok(globalCode.includes('addDays: addDays'));
 
         // Should register default export
-        assert.ok(globalCode.includes('Default export'));
+        assert.ok(globalCode.includes('.default ='));
     });
 
     it('Should detect namespace imports and generate dependencies', function() {
