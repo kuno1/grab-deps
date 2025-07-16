@@ -1,12 +1,12 @@
 {
 	"name": "@kunoichi/grab-deps",
-	"version": "3.0.0",
+	"version": "3.0.4",
 	"description": "Grab dependencies from js/css files.",
 	"main": "index.js",
 	"scripts": {
 		"test": "mocha",
-		"lint": "wp-scripts lint-js '{index.js,bin/grab-deps.mjs}'",
-		"format": "eslint --fix --c ./node_modules/@wordpress/scripts/config/.eslintrc.js '{index.js,bin/grab-deps.mjs}'",
+		"lint": "wp-scripts lint-js '{index.js,lib/*.js,bin/grab-deps.js,bin/grab-images.mjs}'",
+		"format": "eslint --fix --c ./node_modules/@wordpress/scripts/config/.eslintrc.js '{index.js,lib/*.js,bin/grab-deps.js,bin/grab-images.mjs}'",
 		"imagemin": "npx grab-deps-image 'test/src/images/**/*.{jpg,png,gif,svg}' test/dist/images",
 		"js": "npx grab-deps js 'test/assets/js' test/dist/js",
 		"dump": "npx grab-deps dump 'test/src'"
