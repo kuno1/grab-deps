@@ -22,13 +22,14 @@ const { addPath, isWordPressScriptsAvailable } = require( './lib/build-utils' );
 /**
  * Grab dependencies from file.
  *
- * @param {string}            file    File path to scan.
- * @param {string | Function} suffix  Suffix for license.txt. If exists, it priors. Default, ".License.txt".
- * @param {string}            version Default version for files. If specified in header, it priors.
+ * @param {string}            file       File path to scan.
+ * @param {string | Function} suffix     Suffix for license.txt. If exists, it priors. Default, ".License.txt".
+ * @param {string}            version    Default version for files. If specified in header, it priors.
+ * @param {string}            configPath Optional path to config file.
  * @return {object|null} Dependency object with handle, path, deps, etc. or null if file content is empty
  */
-function grabDeps( file, suffix = '', version = '0.0.0' ) {
-	const config = readGrabDepsConfig();
+function grabDeps( file, suffix = '', version = '0.0.0', configPath = null ) {
+	const config = readGrabDepsConfig( configPath );
 	const handleName = file
 		.split( '/' )
 		.slice( -1 )[ 0 ]
@@ -215,12 +216,13 @@ function grabDeps( file, suffix = '', version = '0.0.0' ) {
 /**
  * Scan directory and extract dependencies.
  *
- * @param {string|string[]}   dirs    Directory file to scan. CSV format is also supported.
- * @param {string | Function} suffix  Suffix for license file.
- * @param {string}            version Default version string.
+ * @param {string|string[]}   dirs       Directory file to scan. CSV format is also supported.
+ * @param {string | Function} suffix     Suffix for license file.
+ * @param {string}            version    Default version string.
+ * @param {string}            configPath Optional path to config file.
  * @return {Array} Array of dependency objects
  */
-function scanDir( dirs, suffix = '', version = '0.0.0' ) {
+function scanDir( dirs, suffix = '', version = '0.0.0', configPath = null ) {
 	if ( 'string' === typeof dirs ) {
 		dirs = dirs.split( ',' );
 	}
@@ -229,7 +231,7 @@ function scanDir( dirs, suffix = '', version = '0.0.0' ) {
 		const pattern = dir.replace( /\/$/, '' ) + '/**/*.*(css|js)';
 		const matches = glob.sync( pattern );
 		matches.forEach( ( file ) => {
-			result.push( grabDeps( file, suffix, version ) );
+			result.push( grabDeps( file, suffix, version, configPath ) );
 		} );
 	} );
 	return result;
@@ -238,19 +240,21 @@ function scanDir( dirs, suffix = '', version = '0.0.0' ) {
 /**
  * Dump dependencies in json file.
  *
- * @param {string|string[]}   dirs    Directory to scan.
- * @param {string}            dump    File to dump.
- * @param {string | Function} suffix  Suffix for license file.
- * @param {string}            version Default version string.
+ * @param {string|string[]}   dirs       Directory to scan.
+ * @param {string}            dump       File to dump.
+ * @param {string | Function} suffix     Suffix for license file.
+ * @param {string}            version    Default version string.
+ * @param {string}            configPath Optional path to config file.
  * @return {void} Writes dependency information to JSON file
  */
 function dumpSetting(
 	dirs,
 	dump = './wp-dependencies.json',
 	suffix = '',
-	version = '0.0.0'
+	version = '0.0.0',
+	configPath = null
 ) {
-	const result = scanDir( dirs, suffix, version );
+	const result = scanDir( dirs, suffix, version, configPath );
 	fs.writeFileSync( dump, JSON.stringify( result, null, '\t' ) );
 }
 
