@@ -1,397 +1,23 @@
 const fs = require( 'fs' );
 const crypto = require( 'crypto' );
 const { glob } = require( 'glob' );
-const { execSync, spawnSync } = require( 'child_process' );
+const { execSync } = require( 'child_process' );
 const path = require( 'path' );
 
-/**
- * @typedef Path
- * @type {Object}
- * @property {string}   dir   - Parent directory.
- * @property {number}   order - Order. Lower processed first.
- * @property {string[]} path  - Array of file path.
- */
-
-/**
- * Add path by order.
- *
- * @param {Path[]} paths
- * @param {string} newPath
- * @return {void}
- */
-const addPath = ( paths, newPath ) => {
-	const pathParts = newPath.split( '/' ).filter( ( p ) => p.length >= 1 );
-	const length = pathParts.length;
-	const lastName = pathParts.pop();
-	const parentDir = pathParts.join( '/' );
-	let index = -1;
-	for ( let i = 0; i < paths.length; i++ ) {
-		if ( paths[ i ].dir === parentDir ) {
-			index = i;
-			break;
-		}
-	}
-	if ( 0 <= index ) {
-		// Already exists.
-		paths[ index ].path.push( [ parentDir, lastName ].join( '/' ) );
-	} else {
-		// Add new path.
-		paths.push( {
-			dir: parentDir,
-			order: length,
-			path: [ [ parentDir, lastName ].join( '/' ) ],
-		} );
-	}
-	paths.sort( ( a, b ) => {
-		if ( a.order === b.order ) {
-			return 0;
-		}
-		return a.order < b.order ? -1 : 1;
-	} );
-};
-
-/**
- * Extract license header from JS file.
- *
- * @param {string}   filePath
- * @param {string}   src
- * @param {string}   dest
- * @param {string[]} deps     - Dependencies from asset.php
- * @return {boolean} True if license.txt is generated.
- */
-const extractHeaderToLicense = ( filePath, src, dest, deps = [] ) => {
-	const target = filePath.replace( src, dest ) + '.LICENSE.txt';
-	const content = fs.readFileSync( filePath, 'utf8' );
-	if ( ! content ) {
-		return false;
-	}
-
-	let licenseContent = '';
-
-	// 既存のライセンスヘッダーを取得
-	const match = content.match( /^(\/\*{1,2}!.*?\*\/)/ms );
-	if ( match ) {
-		licenseContent = match[ 1 ];
-	}
-
-	// 依存関係情報を統合
-	if ( deps.length > 0 ) {
-		// 既存のライセンスヘッダーから既存の依存関係を取得
-		const existingDeps = [];
-		if ( licenseContent ) {
-			const existingDepsMatch = licenseContent.match(
-				/^\s*\*\s*@deps\s+([^\n*]+)/gm
-			);
-			if ( existingDepsMatch ) {
-				existingDepsMatch.forEach( ( found ) => {
-					const depsLine = found
-						.replace( /^\s*\*\s*@deps\s+/, '' )
-						.trim();
-					depsLine.split( ',' ).forEach( ( dep ) => {
-						const trimmedDep = dep.trim();
-						if (
-							trimmedDep &&
-							! existingDeps.includes( trimmedDep )
-						) {
-							existingDeps.push( trimmedDep );
-						}
-					} );
-				} );
-			}
-		}
-
-		// 新しい依存関係を追加（重複を除去）
-		const allDeps = [ ...existingDeps ];
-		deps.forEach( ( dep ) => {
-			if ( ! allDeps.includes( dep ) ) {
-				allDeps.push( dep );
-			}
-		} );
-
-		if ( allDeps.length > 0 ) {
-			if ( licenseContent ) {
-				// 既存のライセンスヘッダーから @deps 行を削除
-				licenseContent = licenseContent.replace(
-					/^\s*\*\s*@deps\s+[^*\n]+\n?/gm,
-					''
-				);
-				// 統合された依存関係情報を追加
-				const depsComment = `\n/*!\n * @deps ${ allDeps.join(
-					', '
-				) }\n */`;
-				licenseContent += depsComment;
-			} else {
-				// ライセンスヘッダーがない場合、依存関係情報のみを追加
-				licenseContent = `/*!\n * @deps ${ allDeps.join( ', ' ) }\n */`;
-			}
-		}
-	}
-
-	if ( licenseContent ) {
-		fs.writeFileSync( target, licenseContent );
-		return true;
-	}
-
-	return false;
-};
-
-/**
- * Check if wp-scripts is available.
- *
- * @return {boolean} True if wp-scripts is available.
- */
-function isWordPressScriptsAvailable() {
-	const result = spawnSync( 'npm', [ 'list', '@wordpress/scripts' ], {
-		encoding: 'utf-8',
-	} );
-	return result.stdout.match( /@wordpress\/scripts/ms );
-}
-
-/**
- * Read grab-deps configuration from package.json.
- *
- * @return {Object} Config object with namespace, srcDir and other configuration options
- */
-function readGrabDepsConfig() {
-	const packageJsonPath = path.join( process.cwd(), 'package.json' );
-	if ( ! fs.existsSync( packageJsonPath ) ) {
-		return {};
-	}
-
-	const packageJson = JSON.parse(
-		fs.readFileSync( packageJsonPath, 'utf8' )
-	);
-	const config = packageJson.grabDeps || {};
-
-	// Set default values
-	return {
-		namespace: config.namespace || '', // No default namespace - must be explicitly set
-		srcDir: config.srcDir || 'src',
-		...config,
-	};
-}
-
-/**
- * Generate handle name based on folder structure.
- *
- * @param {string} filePath  - File path relative to srcDir
- * @param {string} srcDir    - Source directory
- * @param {string} namespace - Namespace prefix
- * @return {string} Generated handle name with namespace prefix
- */
-function generateHandleName( filePath, srcDir, namespace ) {
-	// Remove srcDir from path and file extension
-	const relativePath = path.relative( srcDir, filePath );
-	const pathWithoutExt = relativePath.replace( /\.(js|jsx|css|scss)$/, '' );
-
-	// Convert path separators to dashes
-	const pathParts = pathWithoutExt.split( path.sep );
-	const handleName = `${ namespace }-${ pathParts.join( '-' ) }`;
-
-	return handleName;
-}
-
-/**
- * Parse import statements from file content.
- *
- * @param {string} fileContent - File content to parse
- * @param {string} namespace   - Namespace prefix to look for
- * @return {string[]} - Array of namespace import paths
- */
-function parseNamespaceImports( fileContent, namespace ) {
-	const imports = [];
-	const importRegex =
-		/import\s+(?:(?:\{[^}]*\}|\w+|\*\s+as\s+\w+)(?:\s*,\s*(?:\{[^}]*\}|\w+|\*\s+as\s+\w+))*\s+from\s+)?['"]([^'"]+)['"]/g;
-
-	let match;
-	while ( ( match = importRegex.exec( fileContent ) ) !== null ) {
-		const importPath = match[ 1 ];
-
-		// Only process imports that start with namespace prefix (e.g., @mylib/)
-		if ( importPath.startsWith( `@${ namespace }/` ) ) {
-			imports.push( importPath );
-		}
-	}
-
-	return imports;
-}
-
-/**
- * Convert namespace import path to handle name.
- *
- * @param {string} importPath - Namespace import path (e.g., @mylib/utils/date)
- * @param {string} namespace  - Namespace prefix
- * @return {string} - Handle name
- */
-function convertNamespaceImportToHandle( importPath, namespace ) {
-	// Remove @namespace/ prefix and convert to handle format
-	const pathWithoutNamespace = importPath.replace( `@${ namespace }/`, '' );
-	const handleName = `${ namespace }-${ pathWithoutNamespace.replace(
-		/\//g,
-		'-'
-	) }`;
-
-	return handleName;
-}
-
-/**
- * Parse export statements from file content.
- *
- * @param {string} fileContent - File content to parse
- * @return {Object} Object containing exported items with named, default, and reexports properties
- */
-function parseExports( fileContent ) {
-	const exports = {
-		named: [], // Named exports: export const foo = ...
-		default: null, // Default export: export default ...
-		reexports: [], // Re-exports: export { foo } from './bar'
-	};
-
-	// Match named exports: export const/let/var/function/class
-	const namedExportRegex =
-		/export\s+(?:const|let|var|function|class)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g;
-	let match;
-	while ( ( match = namedExportRegex.exec( fileContent ) ) !== null ) {
-		exports.named.push( match[ 1 ] );
-	}
-
-	// Match export statements: export { foo, bar }
-	const exportStatementRegex = /export\s*\{\s*([^}]+)\s*\}/g;
-	while ( ( match = exportStatementRegex.exec( fileContent ) ) !== null ) {
-		const items = match[ 1 ]
-			.split( ',' )
-			.map( ( item ) => item.trim().split( /\s+as\s+/ )[ 0 ] );
-		exports.named.push( ...items );
-	}
-
-	// Match default export with variable name
-	const defaultExportRegex = /export\s+default\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/;
-	const defaultMatch = defaultExportRegex.exec( fileContent );
-	if ( defaultMatch ) {
-		exports.default = defaultMatch[ 1 ]; // variable name
-	} else {
-		// Check for other default export patterns (expressions, etc.)
-		const defaultExportPattern = /export\s+default\s+/;
-		if ( defaultExportPattern.test( fileContent ) ) {
-			exports.default = true; // expression or other pattern
-		}
-	}
-
-	// Remove duplicates
-	exports.named = [ ...new Set( exports.named ) ];
-
-	return exports;
-}
-
-/**
- * Generate global registration code for a module.
- *
- * @param {string} filePath  - Path to the module file
- * @param {string} srcDir    - Source directory
- * @param {string} namespace - Namespace prefix
- * @param {Object} exports   - Exported items from parseExports
- * @return {string} Global registration code for the module
- */
-function generateGlobalRegistration( filePath, srcDir, namespace, exports ) {
-	// Generate namespace path: @namespace/utils/date -> window.namespace.utils.date
-	const relativePath = path.relative( srcDir, filePath );
-	const pathWithoutExt = relativePath.replace( /\.(js|jsx|ts|tsx)$/, '' );
-	const namespaceParts = pathWithoutExt.split( path.sep );
-	const globalPath = `window.${ namespace }.${ namespaceParts.join( '.' ) }`;
-
-	let code = `// Global registration for ${ filePath }\n`;
-
-	// Create namespace hierarchy
-	const parts = [ namespace, ...namespaceParts ];
-	for ( let i = 0; i < parts.length; i++ ) {
-		const currentPath = `window.${ parts.slice( 0, i + 1 ).join( '.' ) }`;
-		code += `${ currentPath } = ${ currentPath } || {};\n`;
-	}
-
-	// Register named exports
-	if ( exports.named.length > 0 ) {
-		code += `${ globalPath } = Object.assign( ${ globalPath }, {\n`;
-		exports.named.forEach( ( exportName, index ) => {
-			const comma = index < exports.named.length - 1 ? ',' : '';
-			code += `\t${ exportName }: ${ exportName }${ comma }\n`;
-		} );
-		code += `} );\n`;
-	}
-
-	// Register default export
-	if ( exports.default ) {
-		if ( typeof exports.default === 'string' ) {
-			// export default variableName - assign the variable directly to the global path
-			code += `${ globalPath } = ${ exports.default };\n`;
-		} else {
-			// export default expression - assign to .default property
-			code += `${ globalPath }.default = ${ globalPath }.default || {};\n`;
-		}
-	}
-
-	return code;
-}
-
-/**
- * Parse header to grab information.
- *
- * @param {Object}   object      Object to assign.
- * @param {string}   fileContent Line string to parse.
- * @param {string[]} deps        Additional dependencies.
- * @param {number}   maxScan     Maximum lines to scan.
- * @return {Object} Updated object with parsed header information
- */
-function scanHeader( object, fileContent, deps, maxScan = 60 ) {
-	if ( ! deps ) {
-		deps = [];
-	}
-	const lines = fileContent.toString().split( '\n' );
-	lines.forEach( ( line, i ) => {
-		// If limit exceeded, stop scanning.
-		if ( i + 1 > maxScan ) {
-			return;
-		}
-		if (
-			! line.match(
-				/^[ *]*(wp|@)(deps|handle|version|footer|media|strategy|cssmedia)=?(.*)$/
-			)
-		) {
-			// This is not header. Skip.
-			return;
-		}
-
-		const key = RegExp.$2.trim();
-		const value = RegExp.$3.trim();
-		switch ( key ) {
-			case 'version':
-			case 'handle':
-			case 'strategy':
-				object[ key ] = value;
-				break;
-			case 'media':
-				if ( ! object.media ) {
-					object.media = value;
-				}
-				break;
-			case 'cssmedia':
-				object.media = value;
-				break;
-			case 'footer':
-				object.footer = ! ( 'false' === value );
-				break;
-			case 'deps':
-				value.split( ',' ).forEach( ( dep ) => {
-					dep = dep.trim();
-					if ( 0 > deps.indexOf( dep ) ) {
-						deps.push( dep );
-					}
-				} );
-				break;
-		}
-	} );
-	object.deps = deps;
-	return object;
-}
+// Import internal modules
+const { readGrabDepsConfig } = require( './lib/config' );
+const {
+	scanHeader,
+	parseExports,
+	parseNamespaceImports,
+} = require( './lib/parsers' );
+const {
+	generateHandleName,
+	convertNamespaceImportToHandle,
+	generateGlobalRegistration,
+} = require( './lib/generators' );
+const { extractHeaderToLicense } = require( './lib/file-utils' );
+const { addPath, isWordPressScriptsAvailable } = require( './lib/build-utils' );
 
 /**
  * Grab dependencies from file.
@@ -655,7 +281,7 @@ function compileDirectory( srcDir, destDir, extensions = [ 'js', 'jsx' ] ) {
 	const globDir = extensions.map( ( ext ) => `${ srcDir }/**/*.${ ext }` );
 	return glob( globDir )
 		.then( ( res ) => {
-			/** @type {Path[]} pathsArray */
+			/** @type {import('./lib/build-utils').Path[]} pathsArray */
 			const pathsArray = [];
 			res.forEach( ( filePath ) => {
 				addPath( pathsArray, filePath );
@@ -726,6 +352,57 @@ function compileDirectory( srcDir, destDir, extensions = [ 'js', 'jsx' ] ) {
 				}
 			);
 		} )
+		.then( ( { pathsArray, dependencyMap } ) => {
+			// Process files and add global registration code if needed
+			const config = readGrabDepsConfig();
+
+			// If globalExportGeneration is enabled, process JS files
+			if (
+				config.globalExportGeneration &&
+				config.namespace &&
+				config.srcDir
+			) {
+				return glob( `${ destDir }/**/*.js` ).then( ( jsFiles ) => {
+					jsFiles.forEach( ( destFile ) => {
+						// Find corresponding source file
+						const srcFile = destFile.replace( destDir, srcDir );
+						if ( fs.existsSync( srcFile ) ) {
+							const srcContent = fs.readFileSync(
+								srcFile,
+								'utf8'
+							);
+							const exports = parseExports( srcContent );
+
+							if ( exports.named.length > 0 || exports.default ) {
+								// Generate global registration code
+								const globalCode = generateGlobalRegistration(
+									srcFile,
+									srcDir,
+									config.namespace,
+									exports
+								);
+
+								// Read the compiled file
+								let compiledContent = fs.readFileSync(
+									destFile,
+									'utf8'
+								);
+
+								// Append global registration code at the end
+								compiledContent += '\n\n' + globalCode;
+
+								// Write back to file
+								fs.writeFileSync( destFile, compiledContent );
+							}
+						}
+					} );
+
+					return { pathsArray, dependencyMap };
+				} );
+			}
+
+			return { pathsArray, dependencyMap };
+		} )
 		.then( ( { dependencyMap } ) => {
 			// license.txtを生成する際に依存関係情報を含める
 			return glob( globDir ).then( ( res ) => {
@@ -750,10 +427,10 @@ function compileDirectory( srcDir, destDir, extensions = [ 'js', 'jsx' ] ) {
 		} );
 }
 
-module.exports.scanHeader = scanHeader;
-module.exports.grabDeps = grabDeps;
-module.exports.scanDir = scanDir;
-module.exports.dumpSetting = dumpSetting;
-module.exports.compileDirectory = compileDirectory;
-module.exports.parseExports = parseExports;
-module.exports.generateGlobalRegistration = generateGlobalRegistration;
+// Export only the main public API functions
+module.exports = {
+	grabDeps,
+	scanDir,
+	dumpSetting,
+	compileDirectory,
+};
