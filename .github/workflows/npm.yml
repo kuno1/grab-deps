@@ -47,6 +47,7 @@ jobs:
 
   branch-check:
     uses: tarosky/workflows/.github/workflows/check-tag-in-branch.yml@main
+    if: contains(github.ref, 'tags/')
     needs: status-check
     with:
       allowed_branch: "master"
@@ -55,7 +56,6 @@ jobs:
     name: Publish to npm.js
     runs-on: ubuntu-latest
     needs: branch-check
-    if: contains(github.ref, 'tags/')
     permissions:
       contents: read
       id-token: write
