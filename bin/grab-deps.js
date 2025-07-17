@@ -7,13 +7,33 @@ const [ , , subcommand ] = process.argv;
 switch ( subcommand ) {
 	case 'dump':
 		{
-			const dir = process.argv[ 3 ] || './src';
-			const json = process.argv[ 4 ] || './wp-dependencies.json';
-			const suffix = process.argv[ 5 ] || '';
-			const version = process.argv[ 6 ] || '0.0.0';
+			const args = process.argv.slice( 3 );
+			let dir = './src';
+			let json = './wp-dependencies.json';
+			let suffix = '';
+			let version = '0.0.0';
+			let configPath = null;
+
+			// Parse arguments
+			for ( let i = 0; i < args.length; i++ ) {
+				const arg = args[ i ];
+				if ( arg === '--config' ) {
+					configPath = args[ i + 1 ];
+					i++; // Skip next argument as it's the config path
+				} else if ( i === 0 ) {
+					dir = arg;
+				} else if ( i === 1 ) {
+					json = arg;
+				} else if ( i === 2 ) {
+					suffix = arg;
+				} else if ( i === 3 ) {
+					version = arg;
+				}
+			}
+
 			// eslint-disable-next-line no-console
 			console.log( `Scanning ${ dir } and dumping ${ json }` );
-			dumpSetting( dir, json, suffix, version );
+			dumpSetting( dir, json, suffix, version, configPath );
 		}
 		break;
 	case 'js':
