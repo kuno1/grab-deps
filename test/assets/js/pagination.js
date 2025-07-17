@@ -1,0 +1,1 @@
+window.hb=window.hb||{},window.hb.pagination=window.hb.pagination||{},window.hb.pagination=Object.assign(window.hb.pagination,{createPagination:(n,i)=>({current:n,total:i,hasNext:n<i,hasPrev:n>1}),renderPagination:n=>`<div class="pagination">Page ${n.current} of ${n.total}</div>`});

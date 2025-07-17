@@ -30,6 +30,14 @@ const { addPath, isWordPressScriptsAvailable } = require( './lib/build-utils' );
  */
 function grabDeps( file, suffix = '', version = '0.0.0', configPath = null ) {
 	const config = readGrabDepsConfig( configPath );
+
+	// Debug: Log configuration for troubleshooting
+	if ( process.env.GRAB_DEPS_DEBUG ) {
+		console.log( `[DEBUG] File: ${file}` );
+		console.log( `[DEBUG] Config:`, config );
+		console.log( `[DEBUG] ConfigPath: ${configPath}` );
+	}
+
 	const handleName = file
 		.split( '/' )
 		.slice( -1 )[ 0 ]
