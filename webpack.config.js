@@ -11,6 +11,14 @@ const configs = Array.isArray(defaultConfig) ? defaultConfig : [defaultConfig];
 
 const modifiedConfigs = configs.map(config => ({
 	...config,
+	resolve: {
+		...config.resolve,
+		alias: {
+			...config.resolve?.alias,
+			// Add alias for test namespace imports to prevent module resolution errors
+			'@testns': path.resolve(__dirname, 'test/src'),
+		},
+	},
 	module: {
 		...config.module,
 		rules: [

@@ -8,7 +8,7 @@ describe( 'JSON Dump Test', () => {
 	// Load setting.
 	const setting = JSON.parse( fs.readFileSync( 'wp-dependencies.json', 'utf8' ) );
 	it( 'Count Length', () => {
-		assert.equal( setting.length,  24);
+		assert.equal( setting.length,  25);
 	} );
 	it( 'Check Deep CSS', () => {
 		let css = null;
