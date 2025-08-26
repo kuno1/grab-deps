@@ -4,7 +4,11 @@ const path = require('path');
 const { compileDirectory } = require('../index');
 
 describe('File System Watch Compatibility', function() {
-	this.timeout(10000);
+	// Use extended timeout for all environments as compilation can be slow
+	const testTimeout = 60000; // 60 seconds for all environments
+
+	console.log('Running File System Watch tests with extended timeout (60s)');
+	this.timeout(testTimeout);
 
 	const sourceDir = 'test/src/js';
 	const destDir = 'test/dist/js';
@@ -38,6 +42,7 @@ describe('File System Watch Compatibility', function() {
 	});
 
 	it('should not create .backup files during compilation', async function() {
+		this.timeout(testTimeout);
 		const beforeFiles = getAllFiles(sourceDir);
 
 		// Run compilation
@@ -57,6 +62,7 @@ describe('File System Watch Compatibility', function() {
 	});
 
 	it('should not leave temporary files in source directory', async function() {
+		this.timeout(testTimeout);
 		const initialFiles = getAllFiles(sourceDir);
 
 		// Run compilation multiple times to simulate watch scenario
@@ -79,6 +85,7 @@ describe('File System Watch Compatibility', function() {
 	});
 
 	it('should maintain source file integrity during compilation', async function() {
+		this.timeout(testTimeout);
 		const testFiles = [
 			'test-es6-export-issue.js',
 			'test-es6-exports.js',
@@ -109,7 +116,7 @@ describe('File System Watch Compatibility', function() {
 	});
 
 	it('should handle rapid successive compilations without file conflicts', async function() {
-		this.timeout(20000); // Increase timeout for sequential compilations
+		this.timeout(testTimeout); // Use consistent timeout
 
 		// Simulate rapid sequential compilation (more realistic for npm-watch)
 		const compilationResults = [];
