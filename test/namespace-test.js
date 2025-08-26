@@ -20,7 +20,7 @@ describe('Issue #37: namespace handling', () => {
 		const originalCwd = process.cwd;
 		process.cwd = () => '/Users/guy/Documents/GitHub/grab-deps';
 
-		const result = grabDeps('test/assets/js/pagination.js');
+		const result = grabDeps('test/dist/js/pagination.js');
 
 		// Namespace should NOT be applied when file is outside srcDir
 		assert.strictEqual(result.handle, 'pagination');

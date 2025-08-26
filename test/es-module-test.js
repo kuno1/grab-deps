@@ -113,7 +113,7 @@ describe('ES Module Export Detection', function() {
         // Should detect default export with variable name
         assert.strictEqual(result.handle, 'testns-js-components-list');
         assert.ok(result.globalRegistration);
-        assert.ok(result.globalRegistration.includes('window.testns.js.components.list = list;'));
+        assert.ok(result.globalRegistration.includes('window.testns.js.components.list = List;'));
     });
 
     it('Should handle default import dependencies', function() {

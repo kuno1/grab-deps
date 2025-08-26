@@ -7,7 +7,7 @@ describe('JS compile test', function () {
 
 	let setting;
 
-	const srcDir = 'test/assets/js';
+	const srcDir = 'test/src/js';
 	const destDir = 'test/dist/js';
 
 	// Prepare JS for compiling.

@@ -6,7 +6,7 @@ const { compileDirectory } = require('../index');
 describe('File System Watch Compatibility', function() {
 	this.timeout(10000);
 
-	const sourceDir = 'test/assets/js';
+	const sourceDir = 'test/src/js';
 	const destDir = 'test/dist/js';
 
 	beforeEach(function() {

@@ -40,7 +40,7 @@ describe('Folder-based Handle Name Generation', function() {
     });
 
     it('Should use default handle name for files outside configured srcDir', function() {
-        const result = grabDeps('test/assets/js/test-build-sample.js');
+        const result = grabDeps('test/dist/js/test-build-sample.js');
         assert.strictEqual(result.handle, 'test-build-sample');
     });
 

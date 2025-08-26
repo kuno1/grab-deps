@@ -1,1 +1,0 @@
-(()=>{const i=i=>`<li>${i.text}</li>`;window.hb=window.hb||{},window.hb.list=window.hb.list||{},window.hb.list=w=>`<ul>${w.map(i).join("")}</ul>`})();

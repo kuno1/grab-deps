@@ -8,10 +8,9 @@
 		"lint": "wp-scripts lint-js '{index.js,lib/*.js,bin/grab-deps.js,bin/grab-images.mjs}'",
 		"format": "eslint --fix --c ./node_modules/@wordpress/scripts/config/.eslintrc.js '{index.js,lib/*.js,bin/grab-deps.js,bin/grab-images.mjs}'",
 		"imagemin": "npx grab-deps-image 'test/src/images/**/*.{jpg,png,gif,svg}' test/dist/images",
-		"js": "npx grab-deps js 'test/assets/js' test/dist/js --config test/assets/.grab-deps.json",
+		"build:js": "npx grab-deps js test/src/js test/dist/js",
 		"dump": "npx grab-deps dump 'test/src'",
-		"build:js": "npx grab-deps js test/src/js test/assets/js",
-		"dump:issue37": "npx grab-deps dump 'test/assets/js,test/assets/css'"
+		"dump:assets": "npx grab-deps dump 'test/assets/js'"
 	},
 	"bin": {
 		"grab-deps-image": "./bin/grab-images.mjs",
