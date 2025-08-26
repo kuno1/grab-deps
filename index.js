@@ -377,13 +377,16 @@ function compileDirectory(
 			);
 		} )
 		.then( ( { dependencyMap } ) => {
-			// Extract license headers and include dependency information
+			// Extract license headers and inject global registration code
 			return glob( globDir ).then( ( res ) => {
+				const config = readGrabDepsConfig( configPath );
 				const result = { total: res.length, extracted: 0 };
 				res.forEach( ( filePath ) => {
 					result.total++;
 					const destFile = filePath.replace( srcDir, destDir );
 					const deps = dependencyMap[ destFile ] || [];
+
+					// Extract license headers
 					if (
 						extractHeaderToLicense(
 							filePath,
@@ -393,6 +396,45 @@ function compileDirectory(
 						)
 					) {
 						result.extracted++;
+					}
+
+					// Inject global registration code if enabled
+					if (
+						config.globalExportGeneration &&
+						config.namespace &&
+						config.srcDir &&
+						fs.existsSync( destFile ) &&
+						destFile.endsWith( '.js' )
+					) {
+						try {
+							const srcDirPath = path.resolve( srcDir );
+							const sourceFilePath = path.resolve( filePath );
+
+							// Check if source file is within the configured source directory
+							if ( sourceFilePath.startsWith( srcDirPath ) ) {
+								const sourceContent = fs.readFileSync( filePath, 'utf8' );
+								const exports = parseExports( sourceContent );
+								if ( exports.named.length > 0 || exports.default ) {
+									const globalCode = generateGlobalRegistration(
+										filePath,
+										srcDir,
+										config.namespace,
+										exports
+									);
+
+									// Read compiled file and append global registration code
+									const compiledContent = fs.readFileSync( destFile, 'utf8' );
+									const updatedContent = compiledContent + '\n' + globalCode;
+									fs.writeFileSync( destFile, updatedContent );
+								}
+							}
+						} catch ( e ) {
+							// Fall back to default behavior
+							if ( process.env.GRAB_DEPS_DEBUG ) {
+								// eslint-disable-next-line no-console
+								console.error( `[DEBUG] Failed to inject global registration for ${ filePath }:`, e );
+							}
+						}
 					}
 				} );
 				return result;
