@@ -20,6 +20,38 @@ describe('Issue #37: namespace handling', () => {
 		const originalCwd = process.cwd;
 		process.cwd = () => '/Users/guy/Documents/GitHub/grab-deps';
 
+		// Ensure test file exists (JS compilation test may have deleted the dist directory)
+		const fs = require('fs');
+		const path = require('path');
+		const testFilePath = 'test/dist/js/pagination.js';
+
+		if (!fs.existsSync(testFilePath)) {
+			// Create directory if it doesn't exist
+			fs.mkdirSync(path.dirname(testFilePath), { recursive: true });
+
+			// Create the test file
+			const testFileContent = `/**
+ * Simple pagination component
+ * This file should NOT have namespace applied since it's outside srcDir
+ */
+
+function pagination() {
+    return {
+        currentPage: 1,
+        totalPages: 10,
+        navigate: function(page) {
+            this.currentPage = page;
+        }
+    };
+}
+
+// Export for testing
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = pagination;
+}`;
+			fs.writeFileSync(testFilePath, testFileContent);
+		}
+
 		const result = grabDeps('test/dist/js/pagination.js');
 
 		// Namespace should NOT be applied when file is outside srcDir
