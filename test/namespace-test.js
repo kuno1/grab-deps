@@ -1,28 +1,19 @@
 const assert = require('assert');
 const { grabDeps } = require('../index.js');
+const fs = require('fs');
+const path = require('path');
 
 describe('Issue #37: namespace handling', () => {
 	it('should apply namespace when file is within srcDir', () => {
-		// Mock package.json with grabDeps config
-		const originalCwd = process.cwd;
-		process.cwd = () => '/Users/guy/Documents/GitHub/grab-deps';
-
+		// Use default package.json config without path mocking
 		const result = grabDeps('test/src/js/plugins/toast.js');
 
 		// Namespace should be applied when file is within srcDir
 		assert.strictEqual(result.handle, 'hb-plugins-toast');
-
-		process.cwd = originalCwd;
 	});
 
 	it('should NOT apply namespace when file is outside srcDir', () => {
-		// Mock package.json with grabDeps config
-		const originalCwd = process.cwd;
-		process.cwd = () => '/Users/guy/Documents/GitHub/grab-deps';
-
 		// Ensure test file exists (JS compilation test may have deleted the dist directory)
-		const fs = require('fs');
-		const path = require('path');
 		const testFilePath = 'test/dist/js/pagination.js';
 
 		if (!fs.existsSync(testFilePath)) {
@@ -56,21 +47,35 @@ if (typeof module !== 'undefined' && module.exports) {
 
 		// Namespace should NOT be applied when file is outside srcDir
 		assert.strictEqual(result.handle, 'pagination');
-
-		process.cwd = originalCwd;
 	});
 
 	it('should apply namespace when srcDir is correctly configured', () => {
-		// Test with config that matches the directory structure
-		const originalCwd = process.cwd;
-		process.cwd = () => '/Users/guy/Documents/GitHub/grab-deps';
+		// Ensure test file exists for assets config
+		const testFilePath = 'test/assets/js/pagination.js';
 
-		// Use existing test/assets/.grab-deps.json config file
-		const result = grabDeps('test/assets/js/pagination.js', '', '0.0.0', 'test/assets/.grab-deps.json');
+		if (!fs.existsSync(testFilePath)) {
+			// Create directory if it doesn't exist
+			fs.mkdirSync(path.dirname(testFilePath), { recursive: true });
+
+			// Create the test file
+			const testFileContent = `/**
+ * Pagination component for assets test
+ */
+
+function pagination() {
+    return {
+        currentPage: 1,
+        totalPages: 10
+    };
+}`;
+			fs.writeFileSync(testFilePath, testFileContent);
+		}
+
+		// Use relative path to config file
+		const configPath = path.join(process.cwd(), 'test/assets/.grab-deps.json');
+		const result = grabDeps('test/assets/js/pagination.js', '', '0.0.0', configPath);
 
 		// Namespace should be applied when srcDir is correctly configured
 		assert.strictEqual(result.handle, 'hb-pagination');
-
-		process.cwd = originalCwd;
 	});
 });
