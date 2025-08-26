@@ -412,27 +412,44 @@ function compileDirectory(
 
 							// Check if source file is within the configured source directory
 							if ( sourceFilePath.startsWith( srcDirPath ) ) {
-								const sourceContent = fs.readFileSync( filePath, 'utf8' );
+								const sourceContent = fs.readFileSync(
+									filePath,
+									'utf8'
+								);
 								const exports = parseExports( sourceContent );
-								if ( exports.named.length > 0 || exports.default ) {
-									const globalCode = generateGlobalRegistration(
-										filePath,
-										srcDir,
-										config.namespace,
-										exports
-									);
+								if (
+									exports.named.length > 0 ||
+									exports.default
+								) {
+									const globalCode =
+										generateGlobalRegistration(
+											filePath,
+											srcDir,
+											config.namespace,
+											exports
+										);
 
 									// Read compiled file and append global registration code
-									const compiledContent = fs.readFileSync( destFile, 'utf8' );
-									const updatedContent = compiledContent + '\n' + globalCode;
-									fs.writeFileSync( destFile, updatedContent );
+									const compiledContent = fs.readFileSync(
+										destFile,
+										'utf8'
+									);
+									const updatedContent =
+										compiledContent + '\n' + globalCode;
+									fs.writeFileSync(
+										destFile,
+										updatedContent
+									);
 								}
 							}
 						} catch ( e ) {
 							// Fall back to default behavior
 							if ( process.env.GRAB_DEPS_DEBUG ) {
 								// eslint-disable-next-line no-console
-								console.error( `[DEBUG] Failed to inject global registration for ${ filePath }:`, e );
+								console.error(
+									`[DEBUG] Failed to inject global registration for ${ filePath }:`,
+									e
+								);
 							}
 						}
 					}
