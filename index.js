@@ -30,6 +30,17 @@ const { addPath, isWordPressScriptsAvailable } = require( './lib/build-utils' );
  */
 function grabDeps( file, suffix = '', version = '0.0.0', configPath = null ) {
 	const config = readGrabDepsConfig( configPath );
+
+	// Debug: Log configuration for troubleshooting
+	if ( process.env.GRAB_DEPS_DEBUG ) {
+		// eslint-disable-next-line no-console
+		console.log( `[DEBUG] File: ${ file }` );
+		// eslint-disable-next-line no-console
+		console.log( `[DEBUG] Config:`, config );
+		// eslint-disable-next-line no-console
+		console.log( `[DEBUG] ConfigPath: ${ configPath }` );
+	}
+
 	const handleName = file
 		.split( '/' )
 		.slice( -1 )[ 0 ]
@@ -264,10 +275,8 @@ function dumpSetting(
  * wp-scripts does not support nested js directory.
  * This function compiles all js files in the directory and keep the directory structure.
  *
- * 1. Pre-process ES6 export files to CommonJS format in temporary directory.
- * 2. Compile all ES6+ or JSX files in the directory.
- * 3. Remove block directory.
- * 4. Extract license header to license.txt.
+ * Now uses webpack loader for namespace transformation instead of file manipulation.
+ * This prevents file watcher infinite loops by processing files in memory only.
  *
  * @param {string}   srcDir     Source directory.
  * @param {string}   destDir    Target directory.
@@ -279,6 +288,7 @@ function compileDirectory(
 	srcDir,
 	destDir,
 	extensions = [ 'js', 'jsx' ],
+	// eslint-disable-next-line no-unused-vars
 	configPath = null
 ) {
 	// Remove trailing slashes.
@@ -290,57 +300,16 @@ function compileDirectory(
 		);
 	}
 	const globDir = extensions.map( ( ext ) => `${ srcDir }/**/*.${ ext }` );
-	const tempDir = '.grab-deps-temp';
 
 	return glob( globDir )
 		.then( ( res ) => {
-			// Pre-process ES6 export files if needed
-			const config = readGrabDepsConfig( configPath );
-
-			// Create temporary directory for pre-processing
-			if ( fs.existsSync( tempDir ) ) {
-				execSync( `rm -rf ${ tempDir }` );
-			}
-			fs.mkdirSync( tempDir, { recursive: true } );
-
-			// Process files and create temporary versions if needed
-			res.forEach( ( filePath ) => {
-				if (
-					config.globalExportGeneration &&
-					config.namespace &&
-					config.srcDir
-				) {
-					const fileContent = fs.readFileSync( filePath, 'utf8' );
-					const exports = parseExports( fileContent );
-
-					// If file has exports, create CommonJS version in temp directory
-					if ( exports.named.length > 0 || exports.default ) {
-						const tempFilePath = path.join(
-							tempDir,
-							path.basename( filePath )
-						);
-						const convertedContent = convertES6ToCommonJS(
-							fileContent,
-							filePath,
-							srcDir,
-							config.namespace,
-							exports
-						);
-						fs.writeFileSync( tempFilePath, convertedContent );
-						// Replace original file temporarily
-						fs.writeFileSync( filePath + '.backup', fileContent );
-						fs.writeFileSync( filePath, convertedContent );
-					}
-				}
-			} );
-
 			/** @type {import('./lib/build-utils').Path[]} pathsArray */
 			const pathsArray = [];
 			res.forEach( ( filePath ) => {
 				addPath( pathsArray, filePath );
 			} );
 
-			// Run build on processed files
+			// Run build using our custom webpack config (includes namespace transformation)
 			const errors = [];
 			pathsArray.forEach( ( p ) => {
 				try {
@@ -362,29 +331,13 @@ function compileDirectory(
 				}
 			} );
 
-			// Restore original files
-			res.forEach( ( filePath ) => {
-				if ( fs.existsSync( filePath + '.backup' ) ) {
-					fs.writeFileSync(
-						filePath,
-						fs.readFileSync( filePath + '.backup', 'utf8' )
-					);
-					fs.unlinkSync( filePath + '.backup' );
-				}
-			} );
-
-			// Clean up temp directory
-			if ( fs.existsSync( tempDir ) ) {
-				execSync( `rm -rf ${ tempDir }` );
-			}
-
 			if ( errors.length ) {
 				throw new Error( `Failed to build: ${ errors.join( ', ' ) }` );
 			}
 			return pathsArray;
 		} )
 		.then( ( pathsArray ) => {
-			// 削除前にasset.phpファイルを解析して依存関係情報を取得
+			// Extract dependency information from asset.php files before cleanup
 			return glob( [ `${ destDir }/**/*.asset.php` ] ).then(
 				( assetFiles ) => {
 					const dependencyMap = {};
@@ -423,12 +376,8 @@ function compileDirectory(
 				}
 			);
 		} )
-		.then( ( { pathsArray, dependencyMap } ) => {
-			// No post-processing needed, global registration is included in pre-processing
-			return { pathsArray, dependencyMap };
-		} )
 		.then( ( { dependencyMap } ) => {
-			// license.txtを生成する際に依存関係情報を含める
+			// Extract license headers and include dependency information
 			return glob( globDir ).then( ( res ) => {
 				const result = { total: res.length, extracted: 0 };
 				res.forEach( ( filePath ) => {
@@ -449,54 +398,6 @@ function compileDirectory(
 				return result;
 			} );
 		} );
-}
-
-/**
- * Convert ES6 exports to CommonJS format with global registration.
- *
- * @param {string} content   Source file content.
- * @param {string} filePath  File path for global registration.
- * @param {string} srcDir    Source directory.
- * @param {string} namespace Global namespace.
- * @param {Object} exports   Export information.
- * @return {string} Converted content.
- */
-function convertES6ToCommonJS( content, filePath, srcDir, namespace, exports ) {
-	// Remove export statements and convert to const declarations
-	let convertedContent = content;
-
-	// Convert named exports
-	exports.named.forEach( ( exportName ) => {
-		const exportRegex = new RegExp(
-			`export\\s+const\\s+${ exportName }\\s*=`,
-			'g'
-		);
-		convertedContent = convertedContent.replace(
-			exportRegex,
-			`const ${ exportName } =`
-		);
-	} );
-
-	// Convert default export
-	if ( exports.default ) {
-		convertedContent = convertedContent.replace(
-			/export\s+default\s+/,
-			'const defaultExport = '
-		);
-	}
-
-	// Generate global registration code
-	const globalCode = generateGlobalRegistration(
-		filePath,
-		srcDir,
-		namespace,
-		exports
-	);
-
-	// Append global registration
-	convertedContent += '\n\n' + globalCode;
-
-	return convertedContent;
 }
 
 // Export only the main public API functions

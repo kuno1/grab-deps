@@ -8,8 +8,9 @@
 		"lint": "wp-scripts lint-js '{index.js,lib/*.js,bin/grab-deps.js,bin/grab-images.mjs}'",
 		"format": "eslint --fix --c ./node_modules/@wordpress/scripts/config/.eslintrc.js '{index.js,lib/*.js,bin/grab-deps.js,bin/grab-images.mjs}'",
 		"imagemin": "npx grab-deps-image 'test/src/images/**/*.{jpg,png,gif,svg}' test/dist/images",
-		"js": "npx grab-deps js 'test/assets/js' test/dist/js --config test/assets/.grab-deps.json",
-		"dump": "npx grab-deps dump 'test/src'"
+		"build:js": "npx grab-deps js test/src/js test/dist/js",
+		"dump": "npx grab-deps dump 'test/src'",
+		"dump:assets": "npx grab-deps dump 'test/assets/js'"
 	},
 	"bin": {
 		"grab-deps-image": "./bin/grab-images.mjs",
@@ -45,6 +46,13 @@
 	},
 	"volta": {
 		"node": "18.20.6"
+	},
+	"grabDeps": {
+		"namespace": "hb",
+		"srcDir": "test/src/js",
+		"autoHandleGeneration": true,
+		"autoImportDetection": true,
+		"globalExportGeneration": true
 	},
 	"peerDependencies": {
 		"@wordpress/scripts": ">=27.9.0",

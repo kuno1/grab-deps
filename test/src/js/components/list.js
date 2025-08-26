@@ -3,12 +3,12 @@
  * @version 1.0.0
  */
 
-const item = (props) => {
+const Item = (props) => {
     return `<li>${props.text}</li>`;
 };
 
-const list = (items) => {
-    return `<ul>${items.map(item).join('')}</ul>`;
+const List = (items) => {
+    return `<ul>${items.map(Item).join('')}</ul>`;
 };
 
-export default list;
+export default List;
