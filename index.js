@@ -33,9 +33,12 @@ function grabDeps( file, suffix = '', version = '0.0.0', configPath = null ) {
 
 	// Debug: Log configuration for troubleshooting
 	if ( process.env.GRAB_DEPS_DEBUG ) {
-		console.log( `[DEBUG] File: ${file}` );
+		// eslint-disable-next-line no-console
+		console.log( `[DEBUG] File: ${ file }` );
+		// eslint-disable-next-line no-console
 		console.log( `[DEBUG] Config:`, config );
-		console.log( `[DEBUG] ConfigPath: ${configPath}` );
+		// eslint-disable-next-line no-console
+		console.log( `[DEBUG] ConfigPath: ${ configPath }` );
 	}
 
 	const handleName = file
@@ -285,6 +288,7 @@ function compileDirectory(
 	srcDir,
 	destDir,
 	extensions = [ 'js', 'jsx' ],
+	// eslint-disable-next-line no-unused-vars
 	configPath = null
 ) {
 	// Remove trailing slashes.
@@ -395,7 +399,6 @@ function compileDirectory(
 			} );
 		} );
 }
-
 
 // Export only the main public API functions
 module.exports = {
