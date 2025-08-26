@@ -33,23 +33,12 @@ describe('Issue #37: namespace handling', () => {
 		const originalCwd = process.cwd;
 		process.cwd = () => '/Users/guy/Documents/GitHub/grab-deps';
 
-		// Create a temporary config file for this test
-		const fs = require('fs');
-		const testConfig = {
-			namespace: 'hb',
-			srcDir: 'test/assets/js',
-			autoHandleGeneration: true
-		};
-
-		fs.writeFileSync('.grab-deps-test.json', JSON.stringify(testConfig));
-
-		const result = grabDeps('test/assets/js/pagination.js', '', '0.0.0', '.grab-deps-test.json');
+		// Use existing test/assets/.grab-deps.json config file
+		const result = grabDeps('test/assets/js/pagination.js', '', '0.0.0', 'test/assets/.grab-deps.json');
 
 		// Namespace should be applied when srcDir is correctly configured
 		assert.strictEqual(result.handle, 'hb-pagination');
 
-		// Clean up
-		fs.unlinkSync('.grab-deps-test.json');
 		process.cwd = originalCwd;
 	});
 });
