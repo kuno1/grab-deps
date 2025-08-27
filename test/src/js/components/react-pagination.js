@@ -73,7 +73,7 @@ const PaginationButton = ( props ) => {
  * @param {Object} props - Component properties
  * @return {JSX.Element} Rendered pagination component
  */
-const Pagination = ( props ) => {
+export const Pagination = ( props ) => {
 	const {
 		total,
 		current,
@@ -164,5 +164,3 @@ const Pagination = ( props ) => {
 		</ul>
 	);
 };
-
-export default Pagination;

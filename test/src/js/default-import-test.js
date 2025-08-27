@@ -3,7 +3,7 @@
  * @version 1.0.0
  */
 
-import list from '@testns/js/components/list';
+import { list } from '@testns/js/components/list';
 import { helper } from './utils/helper.js';
 
 export const renderList = (items) => {

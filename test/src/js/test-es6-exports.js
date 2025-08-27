@@ -13,9 +13,7 @@ export function exportedFunction() {
     return 'function export';
 }
 
-const defaultValue = {
+export const defaultValue = {
     prop1: 'value1',
     prop2: 'value2'
 };
-
-export default defaultValue;

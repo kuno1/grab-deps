@@ -15,7 +15,8 @@ const modifiedConfigs = configs.map(config => ({
 		...config.resolve,
 		alias: {
 			...config.resolve?.alias,
-			// Add alias for test namespace imports to prevent module resolution errors
+			// Test-only alias for namespace import resolution
+			// This allows webpack to resolve @testns imports before namespace-transform-loader processes them
 			'@testns': path.resolve(__dirname, 'test/src'),
 		},
 	},

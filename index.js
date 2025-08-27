@@ -387,19 +387,28 @@ function compileDirectory(
 				if ( config.autoImportDetection && config.namespace ) {
 					res.forEach( ( filePath ) => {
 						try {
-							const sourceContent = fs.readFileSync( filePath, 'utf8' );
+							const sourceContent = fs.readFileSync(
+								filePath,
+								'utf8'
+							);
 							const namespaceImports = parseNamespaceImports(
 								sourceContent,
 								config.namespace
 							);
 							if ( namespaceImports.length > 0 ) {
-								const destFile = filePath.replace( srcDir, destDir );
-								namespaceImportMap[ destFile ] = namespaceImports.map( ( importPath ) => {
-									return convertNamespaceImportToHandle(
-										importPath,
-										config.namespace
-									);
-								}).filter( Boolean );
+								const destFile = filePath.replace(
+									srcDir,
+									destDir
+								);
+								namespaceImportMap[ destFile ] =
+									namespaceImports
+										.map( ( importPath ) => {
+											return convertNamespaceImportToHandle(
+												importPath,
+												config.namespace
+											);
+										} )
+										.filter( Boolean );
 							}
 						} catch ( e ) {
 							// Fall back to default behavior
@@ -417,15 +426,20 @@ function compileDirectory(
 				res.forEach( ( filePath ) => {
 					result.total++;
 					const destFile = filePath.replace( srcDir, destDir );
-					let deps = dependencyMap[ destFile ] || [];
+					const deps = dependencyMap[ destFile ] || [];
 
 					// Add namespace import dependencies
 					if ( namespaceImportMap[ destFile ] ) {
-						namespaceImportMap[ destFile ].forEach( ( importHandle ) => {
-							if ( importHandle && ! deps.includes( importHandle ) ) {
-								deps.push( importHandle );
+						namespaceImportMap[ destFile ].forEach(
+							( importHandle ) => {
+								if (
+									importHandle &&
+									! deps.includes( importHandle )
+								) {
+									deps.push( importHandle );
+								}
 							}
-						} );
+						);
 					}
 
 					// Extract license headers
