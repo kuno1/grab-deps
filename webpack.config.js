@@ -22,7 +22,7 @@ const modifiedConfigs = configs.map(config => ({
 	module: {
 		...config.module,
 		rules: [
-			// Add our custom loader before the existing babel-loader
+			// Add our custom loader before other loaders (including minification)
 			{
 				test: /\.m?(j|t)sx?$/,
 				exclude: /node_modules/,
