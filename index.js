@@ -419,7 +419,10 @@ function compileDirectory(
 								const exports = parseExports( sourceContent );
 
 								// Only fix if there's a default export with a name
-								if ( exports.default && typeof exports.default === 'string' ) {
+								if (
+									exports.default &&
+									typeof exports.default === 'string'
+								) {
 									let compiledContent = fs.readFileSync(
 										destFile,
 										'utf8'
@@ -436,7 +439,8 @@ function compileDirectory(
 									const dirPath = pathParts
 										.slice( 0, -1 )
 										.join( '.' );
-									const fileName = pathParts[pathParts.length - 1];
+									const fileName =
+										pathParts[ pathParts.length - 1 ];
 									const exportName = exports.default;
 
 									if ( dirPath && fileName !== exportName ) {
@@ -445,15 +449,22 @@ function compileDirectory(
 										const exportBasedPattern = `window.${ config.namespace }.${ dirPath }.${ exportName }`;
 
 										// Replace all occurrences of file-based registration
-										compiledContent = compiledContent.replace(
-											new RegExp(
-												fileBasedPattern.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ),
-												'g'
-											),
-											exportBasedPattern
-										);
+										compiledContent =
+											compiledContent.replace(
+												new RegExp(
+													fileBasedPattern.replace(
+														/[.*+?^${}()|[\]\\]/g,
+														'\\$&'
+													),
+													'g'
+												),
+												exportBasedPattern
+											);
 
-										fs.writeFileSync( destFile, compiledContent );
+										fs.writeFileSync(
+											destFile,
+											compiledContent
+										);
 									}
 								}
 							}
