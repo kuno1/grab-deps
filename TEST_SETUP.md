@@ -76,3 +76,32 @@ npm run lint          # Linting validation
 - And more...
 
 All tests maintain 100% pass rate across all configurations.
+
+## Pre-commit Hooks with Husky
+
+The project uses Husky to enforce code quality through pre-commit hooks:
+
+### Automatic Quality Checks
+```bash
+# These run automatically on every commit:
+npm test                # Fast tests (81 tests, ~15 seconds)
+npm run lint           # ESLint validation
+```
+
+### Benefits
+- **Prevents broken commits**: Tests must pass before commit succeeds
+- **Code quality enforcement**: ESLint errors block commits
+- **Fast feedback**: Uses fast test suite for quick validation
+- **Universal compatibility**: Works with CLI, IDEs, and GUI Git tools
+
+### Manual Override (Not Recommended)
+```bash
+git commit --no-verify  # Skip pre-commit hooks (emergency use only)
+```
+
+### Setup for New Developers
+```bash
+npm install            # Installs husky and sets up hooks automatically
+```
+
+The pre-commit hook configuration is stored in `.husky/pre-commit` and automatically configured during `npm install` via the `prepare` script.
