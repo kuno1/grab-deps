@@ -14,7 +14,8 @@
 		"imagemin": "npx grab-deps-image 'test/src/images/**/*.{jpg,png,gif,svg}' test/dist/images",
 		"build:js": "npx grab-deps js test/src/js test/dist/js",
 		"dump": "npx grab-deps dump 'test/src'",
-		"dump:assets": "npx grab-deps dump 'test/assets/js'"
+		"dump:assets": "npx grab-deps dump 'test/assets/js'",
+		"prepare": "husky"
 	},
 	"bin": {
 		"grab-deps-image": "./bin/grab-images.mjs",
@@ -38,6 +39,7 @@
 	},
 	"devDependencies": {
 		"@wordpress/scripts": "^27.9.0",
+		"husky": "^9.1.7",
 		"imagemin": "^9.0.0",
 		"imagemin-gifsicle": "^7.0.0",
 		"imagemin-jpegtran": "^8.0.0",
