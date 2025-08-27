@@ -398,7 +398,7 @@ function compileDirectory(
 						result.extracted++;
 					}
 
-					// Inject global registration code if enabled
+					// Fix webpack-generated global registration to use export names instead of file names
 					if (
 						config.globalExportGeneration &&
 						config.namespace &&
@@ -417,29 +417,44 @@ function compileDirectory(
 									'utf8'
 								);
 								const exports = parseExports( sourceContent );
-								if (
-									exports.named.length > 0 ||
-									exports.default
-								) {
-									const globalCode =
-										generateGlobalRegistration(
-											filePath,
-											srcDir,
-											config.namespace,
-											exports
-										);
 
-									// Read compiled file and append global registration code
-									const compiledContent = fs.readFileSync(
+								// Only fix if there's a default export with a name
+								if ( exports.default && typeof exports.default === 'string' ) {
+									let compiledContent = fs.readFileSync(
 										destFile,
 										'utf8'
 									);
-									const updatedContent =
-										compiledContent + '\n' + globalCode;
-									fs.writeFileSync(
-										destFile,
-										updatedContent
+
+									// Generate directory path for namespace
+									const relativePath = path.relative(
+										srcDir,
+										filePath
 									);
+									const pathParts = relativePath
+										.replace( /\.(js|jsx)$/, '' )
+										.split( path.sep );
+									const dirPath = pathParts
+										.slice( 0, -1 )
+										.join( '.' );
+									const fileName = pathParts[pathParts.length - 1];
+									const exportName = exports.default;
+
+									if ( dirPath && fileName !== exportName ) {
+										// Replace file-name based registration with export-name based
+										const fileBasedPattern = `window.${ config.namespace }.${ dirPath }.${ fileName }`;
+										const exportBasedPattern = `window.${ config.namespace }.${ dirPath }.${ exportName }`;
+
+										// Replace all occurrences of file-based registration
+										compiledContent = compiledContent.replace(
+											new RegExp(
+												fileBasedPattern.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ),
+												'g'
+											),
+											exportBasedPattern
+										);
+
+										fs.writeFileSync( destFile, compiledContent );
+									}
 								}
 							}
 						} catch ( e ) {
@@ -447,7 +462,7 @@ function compileDirectory(
 							if ( process.env.GRAB_DEPS_DEBUG ) {
 								// eslint-disable-next-line no-console
 								console.error(
-									`[DEBUG] Failed to inject global registration for ${ filePath }:`,
+									`[DEBUG] Failed to fix global registration for ${ filePath }:`,
 									e
 								);
 							}
