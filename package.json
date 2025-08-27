@@ -4,13 +4,18 @@
 	"description": "Grab dependencies from js/css files.",
 	"main": "index.js",
 	"scripts": {
-		"test": "mocha",
+		"test": "mocha --ignore 'test/file-system-watch-test.js'",
+		"test:full": "mocha",
+		"test:fast": "mocha --ignore 'test/file-system-watch-test.js'",
+		"test:ci": "mocha",
+		"test:watch": "mocha --ignore 'test/file-system-watch-test.js' --watch",
 		"lint": "wp-scripts lint-js '{index.js,lib/*.js,bin/grab-deps.js,bin/grab-images.mjs}'",
 		"format": "eslint --fix --c ./node_modules/@wordpress/scripts/config/.eslintrc.js '{index.js,lib/*.js,bin/grab-deps.js,bin/grab-images.mjs}'",
 		"imagemin": "npx grab-deps-image 'test/src/images/**/*.{jpg,png,gif,svg}' test/dist/images",
 		"build:js": "npx grab-deps js test/src/js test/dist/js",
 		"dump": "npx grab-deps dump 'test/src'",
-		"dump:assets": "npx grab-deps dump 'test/assets/js'"
+		"dump:assets": "npx grab-deps dump 'test/assets/js'",
+		"prepare": "husky"
 	},
 	"bin": {
 		"grab-deps-image": "./bin/grab-images.mjs",
@@ -34,6 +39,7 @@
 	},
 	"devDependencies": {
 		"@wordpress/scripts": "^27.9.0",
+		"husky": "^9.1.7",
 		"imagemin": "^9.0.0",
 		"imagemin-gifsicle": "^7.0.0",
 		"imagemin-jpegtran": "^8.0.0",
