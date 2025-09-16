@@ -6,7 +6,7 @@
 	"scripts": {
 		"test": "mocha --ignore 'test/file-system-watch-test.js'",
 		"test:full": "mocha",
-		"test:fast": "mocha --ignore 'test/file-system-watch-test.js'",
+		"test:fast": "mocha --ignore 'test/file-system-watch-test.js' --ignore 'test/wpscripts-test.js'",
 		"test:ci": "mocha",
 		"test:watch": "mocha --ignore 'test/file-system-watch-test.js' --watch",
 		"lint": "wp-scripts lint-js '{index.js,lib/*.js,bin/grab-deps.js,bin/grab-images.mjs}'",
