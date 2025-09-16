@@ -55,7 +55,7 @@
 	},
 	"grabDeps": {
 		"namespace": "testns",
-		"srcDir": "test/src",
+		"srcDir": "test/src/js",
 		"autoHandleGeneration": true,
 		"globalExportGeneration": true
 	},

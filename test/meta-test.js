@@ -29,7 +29,7 @@ describe( 'Additional meta information', () => {
 	} );
 
 	it( 'JS without @handle', () => {
-		assert.equal( js_no.handle, 'hb-no-deps' );
+		assert.equal( js_no.handle, 'testns-no-deps' );
 	} );
 
 	it( 'CSS with @handle', () => {

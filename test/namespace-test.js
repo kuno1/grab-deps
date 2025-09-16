@@ -9,7 +9,7 @@ describe('Issue #37: namespace handling', () => {
 		const result = grabDeps('test/src/js/plugins/toast.js');
 
 		// Namespace should be applied when file is within srcDir
-		assert.strictEqual(result.handle, 'hb-plugins-toast');
+		assert.strictEqual(result.handle, 'testns-plugins-toast');
 	});
 
 	it('should NOT apply namespace when file is outside srcDir', () => {
