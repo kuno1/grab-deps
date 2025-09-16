@@ -1,6 +1,12 @@
 {
   "namespace": "hb",
-  "srcDir": "test/assets/js",
-  "globalExportGeneration": true,
-  "autoHandleGeneration": true
+  "js": {
+    "srcDir": "test/assets/js",
+    "globalExportGeneration": true,
+    "autoHandleGeneration": true
+  },
+  "css": {
+    "srcDir": "test/assets/css",
+    "autoHandleGeneration": true
+  }
 }

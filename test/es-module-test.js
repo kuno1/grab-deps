@@ -17,7 +17,6 @@ describe('ES Module Export Detection', function() {
             namespace: 'testns',
             srcDir: 'test/src',
             autoHandleGeneration: true,
-            autoImportDetection: true,
             globalExportGeneration: true
         };
         fs.writeFileSync('package.json', JSON.stringify(packageJson, null, '\t'));
@@ -65,18 +64,6 @@ describe('ES Module Export Detection', function() {
         assert.ok(globalCode.includes('.default ='));
     });
 
-    it('Should detect namespace imports and generate dependencies', function() {
-        const result = grabDeps('test/src/js/modules/app.js');
-
-        // Should have correct handle name
-        assert.strictEqual(result.handle, 'testns-js-modules-app');
-
-        // Should include namespace import dependencies
-        assert.ok(result.deps.includes('testns-js-modules-date-utils'));
-
-        // Should not include relative imports
-        assert.ok(!result.deps.includes('testns-js-modules-helper'));
-    });
 
     it('Should handle files with complex export patterns', function() {
         const complexExportContent = `
@@ -116,17 +103,4 @@ describe('ES Module Export Detection', function() {
         assert.ok(result.globalRegistration.includes('window.testns.js.components.list = List;'));
     });
 
-    it('Should handle default import dependencies', function() {
-        const result = grabDeps('test/src/js/default-import-test.js');
-
-        // Should detect default import dependency
-        assert.strictEqual(result.handle, 'testns-js-default-import-test');
-        assert.ok(result.deps.includes('testns-js-components-list'));
-
-        // Global registration should be generated when config is properly set
-        if (result.globalRegistration) {
-            assert.ok(result.globalRegistration.includes('renderList'));
-            assert.ok(result.globalRegistration.includes('testDefaultImport'));
-        }
-    });
 });

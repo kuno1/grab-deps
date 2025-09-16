@@ -6,14 +6,9 @@ const path = require( 'path' );
 
 // Import internal modules
 const { readGrabDepsConfig } = require( './lib/config' );
-const {
-	scanHeader,
-	parseExports,
-	parseNamespaceImports,
-} = require( './lib/parsers' );
+const { scanHeader, parseExports } = require( './lib/parsers' );
 const {
 	generateHandleName,
-	convertNamespaceImportToHandle,
 	generateGlobalRegistration,
 } = require( './lib/generators' );
 const { extractHeaderToLicense } = require( './lib/file-utils' );
@@ -29,7 +24,9 @@ const { addPath, isWordPressScriptsAvailable } = require( './lib/build-utils' );
  * @return {object|null} Dependency object with handle, path, deps, etc. or null if file content is empty
  */
 function grabDeps( file, suffix = '', version = '0.0.0', configPath = null ) {
-	const config = readGrabDepsConfig( configPath );
+	// Determine file type from extension
+	const fileType = /\.css$/.test( file ) ? 'css' : 'js';
+	const config = readGrabDepsConfig( configPath, fileType );
 
 	// Debug: Log configuration for troubleshooting
 	if ( process.env.GRAB_DEPS_DEBUG ) {
@@ -163,30 +160,6 @@ function grabDeps( file, suffix = '', version = '0.0.0', configPath = null ) {
 				}
 			} catch ( e ) {
 				// Fall back to default handle name
-			}
-		}
-
-		// Parse namespace import statements and add to dependencies if enabled
-		if ( config.autoImportDetection && config.namespace ) {
-			try {
-				const namespaceImports = parseNamespaceImports(
-					fileContent,
-					config.namespace
-				);
-				namespaceImports.forEach( ( importPath ) => {
-					const importHandle = convertNamespaceImportToHandle(
-						importPath,
-						config.namespace
-					);
-					if (
-						importHandle &&
-						! scanned.deps.includes( importHandle )
-					) {
-						scanned.deps.push( importHandle );
-					}
-				} );
-			} catch ( e ) {
-				// Fall back to default behavior
 			}
 		}
 
@@ -379,12 +352,16 @@ function compileDirectory(
 		.then( ( { dependencyMap } ) => {
 			// Extract license headers and inject global registration code
 			return glob( globDir ).then( ( res ) => {
-				const config = readGrabDepsConfig( configPath );
 				const result = { total: res.length, extracted: 0 };
+
 				res.forEach( ( filePath ) => {
 					result.total++;
 					const destFile = filePath.replace( srcDir, destDir );
 					const deps = dependencyMap[ destFile ] || [];
+
+					// Get file-type specific configuration
+					const fileType = /\.css$/.test( filePath ) ? 'css' : 'js';
+					const config = readGrabDepsConfig( configPath, fileType );
 
 					// Extract license headers
 					if (
@@ -398,7 +375,7 @@ function compileDirectory(
 						result.extracted++;
 					}
 
-					// Fix webpack-generated global registration to use export names instead of file names
+					// Handle ES6 export files and global registration
 					if (
 						config.globalExportGeneration &&
 						config.namespace &&
@@ -407,64 +384,88 @@ function compileDirectory(
 						destFile.endsWith( '.js' )
 					) {
 						try {
-							const srcDirPath = path.resolve( srcDir );
+							const configuredSrcDir = path.resolve(
+								config.srcDir
+							);
 							const sourceFilePath = path.resolve( filePath );
 
 							// Check if source file is within the configured source directory
-							if ( sourceFilePath.startsWith( srcDirPath ) ) {
+							if (
+								sourceFilePath.startsWith( configuredSrcDir )
+							) {
 								const sourceContent = fs.readFileSync(
 									filePath,
 									'utf8'
 								);
 								const exports = parseExports( sourceContent );
+								let compiledContent = fs.readFileSync(
+									destFile,
+									'utf8'
+								);
 
-								// Only fix if there's a default export with a name
+								// If file is empty or contains only exports, add global registration
 								if (
-									exports.default &&
-									typeof exports.default === 'string'
+									exports.named.length > 0 ||
+									exports.default
 								) {
-									let compiledContent = fs.readFileSync(
-										destFile,
-										'utf8'
-									);
-
-									// Generate directory path for namespace
-									const relativePath = path.relative(
-										srcDir,
-										filePath
-									);
-									const pathParts = relativePath
-										.replace( /\.(js|jsx)$/, '' )
-										.split( path.sep );
-									const dirPath = pathParts
-										.slice( 0, -1 )
-										.join( '.' );
-									const fileName =
-										pathParts[ pathParts.length - 1 ];
-									const exportName = exports.default;
-
-									if ( dirPath && fileName !== exportName ) {
-										// Replace file-name based registration with export-name based
-										const fileBasedPattern = `window.${ config.namespace }.${ dirPath }.${ fileName }`;
-										const exportBasedPattern = `window.${ config.namespace }.${ dirPath }.${ exportName }`;
-
-										// Replace all occurrences of file-based registration
-										compiledContent =
-											compiledContent.replace(
-												new RegExp(
-													fileBasedPattern.replace(
-														/[.*+?^${}()|[\]\\]/g,
-														'\\$&'
-													),
-													'g'
-												),
-												exportBasedPattern
+									if ( compiledContent.trim().length === 0 ) {
+										// File is empty - add global registration code
+										const globalCode =
+											generateGlobalRegistration(
+												filePath,
+												config.srcDir,
+												config.namespace,
+												exports
 											);
-
 										fs.writeFileSync(
 											destFile,
-											compiledContent
+											globalCode
 										);
+									} else if (
+										exports.default &&
+										typeof exports.default === 'string'
+									) {
+										// File has content - fix naming if needed
+										const relativePath = path.relative(
+											config.srcDir,
+											filePath
+										);
+										const pathParts = relativePath
+											.replace( /\.(js|jsx)$/, '' )
+											.split( path.sep );
+										const dirPath = pathParts
+											.slice( 0, -1 )
+											.join( '.' );
+										const fileName =
+											pathParts[ pathParts.length - 1 ];
+										const exportName = exports.default;
+
+										if (
+											dirPath &&
+											fileName !== exportName
+										) {
+											// Replace file-name based registration with export-name based
+											const fileBasedPattern = `window.${ config.namespace }.${ dirPath }.${ fileName }`;
+											const exportBasedPattern = `window.${ config.namespace }.${ dirPath }.${ exportName }`;
+
+											// Replace all occurrences of file-based registration
+											compiledContent =
+												compiledContent.replace(
+													new RegExp(
+														fileBasedPattern.replace(
+															/[.*+?^${}()|[\]\\]/g,
+															'\\$&'
+														),
+														'g'
+													),
+													exportBasedPattern
+												);
+
+											fs.writeFileSync(
+												destFile,
+												compiledContent
+											);
+										}
 									}
 								}
 							}

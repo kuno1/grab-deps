@@ -25,7 +25,7 @@ jobs:
         run: npm run build:js
 
       - name: Run test suit
-        run: npm test
+        run: npm run test:full
 
       - name: Lint check
         run: npm run lint

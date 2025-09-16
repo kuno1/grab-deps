@@ -16,9 +16,7 @@ export const RenderPagination = (pagination) => {
     return `<div class="pagination">Page ${pagination.current} of ${pagination.total}</div>`;
 };
 
-const Pagination = (props) => {
+export const Pagination = (props) => {
     const paginationData = CreatePagination(props.currentPage, props.totalPages);
     return RenderPagination(paginationData);
 };
-
-export default Pagination;

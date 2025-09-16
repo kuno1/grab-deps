@@ -28,7 +28,7 @@ describe('JS compile test', function () {
 			// Compile JS.
 			console.log('Starting compileDirectory...');
 			const startTime = Date.now();
-			setting = await compileDirectory(srcDir, destDir, ['js', 'jsx'], 'test/assets/.grab-deps.json');
+			setting = await compileDirectory(srcDir, destDir, ['js', 'jsx'], null);
 			const endTime = Date.now();
 			console.log(`Compilation completed successfully in ${endTime - startTime}ms:`, setting);
 		} catch (err) {

@@ -6,7 +6,7 @@
 	"scripts": {
 		"test": "mocha --ignore 'test/file-system-watch-test.js'",
 		"test:full": "mocha",
-		"test:fast": "mocha --ignore 'test/file-system-watch-test.js'",
+		"test:fast": "mocha --ignore 'test/file-system-watch-test.js' --ignore 'test/wpscripts-test.js'",
 		"test:ci": "mocha",
 		"test:watch": "mocha --ignore 'test/file-system-watch-test.js' --watch",
 		"lint": "wp-scripts lint-js '{index.js,lib/*.js,bin/grab-deps.js,bin/grab-images.mjs}'",
@@ -54,11 +54,16 @@
 		"node": "18.20.6"
 	},
 	"grabDeps": {
-		"namespace": "hb",
-		"srcDir": "test/src/js",
-		"autoHandleGeneration": true,
-		"autoImportDetection": true,
-		"globalExportGeneration": true
+		"namespace": "testns",
+		"js": {
+			"srcDir": "test/src/js",
+			"autoHandleGeneration": true,
+			"globalExportGeneration": true
+		},
+		"css": {
+			"srcDir": "test/src/css",
+			"autoHandleGeneration": true
+		}
 	},
 	"peerDependencies": {
 		"@wordpress/scripts": ">=27.9.0",

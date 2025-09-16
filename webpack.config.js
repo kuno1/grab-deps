@@ -15,8 +15,6 @@ const modifiedConfigs = configs.map(config => ({
 		...config.resolve,
 		alias: {
 			...config.resolve?.alias,
-			// Add alias for test namespace imports to prevent module resolution errors
-			'@testns': path.resolve(__dirname, 'test/src'),
 		},
 	},
 	module: {

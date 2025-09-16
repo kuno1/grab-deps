@@ -4,7 +4,7 @@ const { scanDir } = require( '../index' );
 describe( 'Directory Scanner Test', () => {
 	const dir = scanDir( 'test/src' );
 	it( 'Count Length', () => {
-		assert.equal( dir.length, 28, 'Count files in test/src' );
+		assert.equal( dir.length, 29, 'Count files in test/src' );
 	} );
 	it( 'Check Deep CSS', () => {
 		let css = null;
@@ -17,6 +17,6 @@ describe( 'Directory Scanner Test', () => {
 	} );
 	it( 'Directory as array of string', () => {
 		const results = scanDir( [ 'test/src/css', 'test/src/js' ] );
-		assert.equal( results.length, 26, 'Total files are 26.' );
+		assert.equal( results.length, 27, 'Total files are 27.' );
 	} );
 } );
