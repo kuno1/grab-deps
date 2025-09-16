@@ -6,14 +6,9 @@ const path = require( 'path' );
 
 // Import internal modules
 const { readGrabDepsConfig } = require( './lib/config' );
-const {
-	scanHeader,
-	parseExports,
-	parseNamespaceImports,
-} = require( './lib/parsers' );
+const { scanHeader, parseExports } = require( './lib/parsers' );
 const {
 	generateHandleName,
-	convertNamespaceImportToHandle,
 	generateGlobalRegistration,
 } = require( './lib/generators' );
 const { extractHeaderToLicense } = require( './lib/file-utils' );
@@ -163,30 +158,6 @@ function grabDeps( file, suffix = '', version = '0.0.0', configPath = null ) {
 				}
 			} catch ( e ) {
 				// Fall back to default handle name
-			}
-		}
-
-		// Parse namespace import statements and add to dependencies if enabled
-		if ( config.autoImportDetection && config.namespace ) {
-			try {
-				const namespaceImports = parseNamespaceImports(
-					fileContent,
-					config.namespace
-				);
-				namespaceImports.forEach( ( importPath ) => {
-					const importHandle = convertNamespaceImportToHandle(
-						importPath,
-						config.namespace
-					);
-					if (
-						importHandle &&
-						! scanned.deps.includes( importHandle )
-					) {
-						scanned.deps.push( importHandle );
-					}
-				} );
-			} catch ( e ) {
-				// Fall back to default behavior
 			}
 		}
 
@@ -382,65 +353,10 @@ function compileDirectory(
 				const config = readGrabDepsConfig( configPath );
 				const result = { total: res.length, extracted: 0 };
 
-				// Parse namespace imports from source files before processing
-				const namespaceImportMap = {};
-				if ( config.autoImportDetection && config.namespace ) {
-					res.forEach( ( filePath ) => {
-						try {
-							const sourceContent = fs.readFileSync(
-								filePath,
-								'utf8'
-							);
-							const namespaceImports = parseNamespaceImports(
-								sourceContent,
-								config.namespace
-							);
-							if ( namespaceImports.length > 0 ) {
-								const destFile = filePath.replace(
-									srcDir,
-									destDir
-								);
-								namespaceImportMap[ destFile ] =
-									namespaceImports
-										.map( ( importPath ) => {
-											return convertNamespaceImportToHandle(
-												importPath,
-												config.namespace
-											);
-										} )
-										.filter( Boolean );
-							}
-						} catch ( e ) {
-							// Fall back to default behavior
-							if ( process.env.GRAB_DEPS_DEBUG ) {
-								// eslint-disable-next-line no-console
-								console.error(
-									`[DEBUG] Failed to parse namespace imports for ${ filePath }:`,
-									e
-								);
-							}
-						}
-					} );
-				}
-
 				res.forEach( ( filePath ) => {
 					result.total++;
 					const destFile = filePath.replace( srcDir, destDir );
 					const deps = dependencyMap[ destFile ] || [];
-
-					// Add namespace import dependencies
-					if ( namespaceImportMap[ destFile ] ) {
-						namespaceImportMap[ destFile ].forEach(
-							( importHandle ) => {
-								if (
-									importHandle &&
-									! deps.includes( importHandle )
-								) {
-									deps.push( importHandle );
-								}
-							}
-						);
-					}
 
 					// Extract license headers
 					if (

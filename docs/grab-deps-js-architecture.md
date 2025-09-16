@@ -64,23 +64,7 @@ window.mylib.components.ui.Button
 window.mylib.components.ui.Modal
 ```
 
-### 3. 名前空間importの自動依存関係検出（オプション）
-
-**設定**: `autoImportDetection: true`および`namespace`の設定が必要
-
-名前空間付きのimport文を自動的に検出し、依存関係として追加します。
-
-```javascript
-// 元のファイル
-import { dateFormat } from "@mylib/utils";
-
-// 結果: wp-scripts同様、ブラウザで動作する形式に書き換えられます
-const { dateFormat } = mylib.utils;
-
-// さらに、"mylib-utils"が依存関係として自動的に追加されます
-```
-
-### 4. フォルダーベースのハンドル名生成（オプション）
+### 3. フォルダーベースのハンドル名生成（オプション）
 
 **設定**: `autoHandleGeneration: true`および`namespace`の設定が必要
 
@@ -121,7 +105,6 @@ array('dependencies' => array('wp-element', 'wp-components'))
 ### オプション設定
 - `srcDir`: ソースディレクトリ（デフォルト: "src"）
 - `autoHandleGeneration`: フォルダーベースのハンドル名生成を有効化
-- `autoImportDetection`: 名前空間importの自動検出を有効化
 - `globalExportGeneration`: グローバル登録コードの生成を有効化
 
 ### 設定例
@@ -131,7 +114,6 @@ array('dependencies' => array('wp-element', 'wp-components'))
     "namespace": "mylib",
     "srcDir": "src",
     "autoHandleGeneration": true,
-    "autoImportDetection": true,
     "globalExportGeneration": true
 }
 ```

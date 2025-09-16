@@ -54,10 +54,9 @@
 		"node": "18.20.6"
 	},
 	"grabDeps": {
-		"namespace": "hb",
-		"srcDir": "test/src/js",
+		"namespace": "testns",
+		"srcDir": "test/src",
 		"autoHandleGeneration": true,
-		"autoImportDetection": true,
 		"globalExportGeneration": true
 	},
 	"peerDependencies": {

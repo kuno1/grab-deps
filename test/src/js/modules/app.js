@@ -1,10 +1,13 @@
 /*!
  * App module that uses date utilities
  * @version 1.0.0
+ * @deps testns-js-modules-date-utils
  */
 
-import { formatDate, parseDate } from '@testns/js/modules/date-utils';
 import { helper } from './helper.js';  // 相対パス - webpack でバンドルされる
+
+// Use standard WordPress-style global access
+const { formatDate, parseDate } = testns.js.modules.dateUtils;
 
 console.log('App module loaded');
 
