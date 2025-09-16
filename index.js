@@ -403,13 +403,19 @@ function compileDirectory(
 									'utf8'
 								);
 
-								// If file is empty or contains only exports, add global registration
+								// If file has exports, handle empty/minimal compiled files
 								if (
 									exports.named.length > 0 ||
 									exports.default
 								) {
-									if ( compiledContent.trim().length === 0 ) {
-										// File is empty - add global registration code
+									const isMinimalFile =
+										compiledContent.trim().length < 200; // Detect tree-shaking issues
+
+									if (
+										compiledContent.trim().length === 0 ||
+										isMinimalFile
+									) {
+										// File is empty or minimal (tree-shaking issue) - add global registration code
 										const globalCode =
 											generateGlobalRegistration(
 												filePath,

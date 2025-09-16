@@ -15,3 +15,5 @@ const message = __('Mixed dependencies test', 'test-domain');
 const element = createElement('div', { className: 'test-mixed' }, message);
 
 console.log('Mixed dependencies loaded:', { element });
+
+export default element;
