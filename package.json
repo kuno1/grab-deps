@@ -55,9 +55,15 @@
 	},
 	"grabDeps": {
 		"namespace": "testns",
-		"srcDir": "test/src/js",
-		"autoHandleGeneration": true,
-		"globalExportGeneration": true
+		"js": {
+			"srcDir": "test/src/js",
+			"autoHandleGeneration": true,
+			"globalExportGeneration": true
+		},
+		"css": {
+			"srcDir": "test/src/css",
+			"autoHandleGeneration": true
+		}
 	},
 	"peerDependencies": {
 		"@wordpress/scripts": ">=27.9.0",

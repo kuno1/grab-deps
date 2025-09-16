@@ -24,7 +24,9 @@ const { addPath, isWordPressScriptsAvailable } = require( './lib/build-utils' );
  * @return {object|null} Dependency object with handle, path, deps, etc. or null if file content is empty
  */
 function grabDeps( file, suffix = '', version = '0.0.0', configPath = null ) {
-	const config = readGrabDepsConfig( configPath );
+	// Determine file type from extension
+	const fileType = /\.css$/.test( file ) ? 'css' : 'js';
+	const config = readGrabDepsConfig( configPath, fileType );
 
 	// Debug: Log configuration for troubleshooting
 	if ( process.env.GRAB_DEPS_DEBUG ) {
@@ -350,13 +352,16 @@ function compileDirectory(
 		.then( ( { dependencyMap } ) => {
 			// Extract license headers and inject global registration code
 			return glob( globDir ).then( ( res ) => {
-				const config = readGrabDepsConfig( configPath );
 				const result = { total: res.length, extracted: 0 };
 
 				res.forEach( ( filePath ) => {
 					result.total++;
 					const destFile = filePath.replace( srcDir, destDir );
 					const deps = dependencyMap[ destFile ] || [];
+
+					// Get file-type specific configuration
+					const fileType = /\.css$/.test( filePath ) ? 'css' : 'js';
+					const config = readGrabDepsConfig( configPath, fileType );
 
 					// Extract license headers
 					if (
