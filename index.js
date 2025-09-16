@@ -375,7 +375,7 @@ function compileDirectory(
 						result.extracted++;
 					}
 
-					// Fix webpack-generated global registration to use export names instead of file names
+					// Handle ES6 export files and global registration
 					if (
 						config.globalExportGeneration &&
 						config.namespace &&
@@ -384,64 +384,88 @@ function compileDirectory(
 						destFile.endsWith( '.js' )
 					) {
 						try {
-							const srcDirPath = path.resolve( srcDir );
+							const configuredSrcDir = path.resolve(
+								config.srcDir
+							);
 							const sourceFilePath = path.resolve( filePath );
 
 							// Check if source file is within the configured source directory
-							if ( sourceFilePath.startsWith( srcDirPath ) ) {
+							if (
+								sourceFilePath.startsWith( configuredSrcDir )
+							) {
 								const sourceContent = fs.readFileSync(
 									filePath,
 									'utf8'
 								);
 								const exports = parseExports( sourceContent );
+								let compiledContent = fs.readFileSync(
+									destFile,
+									'utf8'
+								);
 
-								// Only fix if there's a default export with a name
+								// If file is empty or contains only exports, add global registration
 								if (
-									exports.default &&
-									typeof exports.default === 'string'
+									exports.named.length > 0 ||
+									exports.default
 								) {
-									let compiledContent = fs.readFileSync(
-										destFile,
-										'utf8'
-									);
-
-									// Generate directory path for namespace
-									const relativePath = path.relative(
-										srcDir,
-										filePath
-									);
-									const pathParts = relativePath
-										.replace( /\.(js|jsx)$/, '' )
-										.split( path.sep );
-									const dirPath = pathParts
-										.slice( 0, -1 )
-										.join( '.' );
-									const fileName =
-										pathParts[ pathParts.length - 1 ];
-									const exportName = exports.default;
-
-									if ( dirPath && fileName !== exportName ) {
-										// Replace file-name based registration with export-name based
-										const fileBasedPattern = `window.${ config.namespace }.${ dirPath }.${ fileName }`;
-										const exportBasedPattern = `window.${ config.namespace }.${ dirPath }.${ exportName }`;
-
-										// Replace all occurrences of file-based registration
-										compiledContent =
-											compiledContent.replace(
-												new RegExp(
-													fileBasedPattern.replace(
-														/[.*+?^${}()|[\]\\]/g,
-														'\\$&'
-													),
-													'g'
-												),
-												exportBasedPattern
+									if ( compiledContent.trim().length === 0 ) {
+										// File is empty - add global registration code
+										const globalCode =
+											generateGlobalRegistration(
+												filePath,
+												config.srcDir,
+												config.namespace,
+												exports
 											);
-
 										fs.writeFileSync(
 											destFile,
-											compiledContent
+											globalCode
 										);
+									} else if (
+										exports.default &&
+										typeof exports.default === 'string'
+									) {
+										// File has content - fix naming if needed
+										const relativePath = path.relative(
+											config.srcDir,
+											filePath
+										);
+										const pathParts = relativePath
+											.replace( /\.(js|jsx)$/, '' )
+											.split( path.sep );
+										const dirPath = pathParts
+											.slice( 0, -1 )
+											.join( '.' );
+										const fileName =
+											pathParts[ pathParts.length - 1 ];
+										const exportName = exports.default;
+
+										if (
+											dirPath &&
+											fileName !== exportName
+										) {
+											// Replace file-name based registration with export-name based
+											const fileBasedPattern = `window.${ config.namespace }.${ dirPath }.${ fileName }`;
+											const exportBasedPattern = `window.${ config.namespace }.${ dirPath }.${ exportName }`;
+
+											// Replace all occurrences of file-based registration
+											compiledContent =
+												compiledContent.replace(
+													new RegExp(
+														fileBasedPattern.replace(
+															/[.*+?^${}()|[\]\\]/g,
+															'\\$&'
+														),
+														'g'
+													),
+													exportBasedPattern
+												);
+
+											fs.writeFileSync(
+												destFile,
+												compiledContent
+											);
+										}
 									}
 								}
 							}
