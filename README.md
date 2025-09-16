@@ -161,7 +161,26 @@ Since version 3.0.0, grab-deps supports ES Module format with automatic global r
 
 ### Configuration
 
-Add configuration to your `package.json`:
+Add configuration to your `package.json` with file-type specific settings:
+
+```json
+{
+  "grabDeps": {
+    "namespace": "mylib",
+    "js": {
+      "srcDir": "src/js",
+      "autoHandleGeneration": true,
+      "globalExportGeneration": true
+    },
+    "css": {
+      "srcDir": "src/css",
+      "autoHandleGeneration": true
+    }
+  }
+}
+```
+
+For legacy compatibility, you can still use the old format, but the new file-type specific format is recommended:
 
 ```json
 {
@@ -169,7 +188,6 @@ Add configuration to your `package.json`:
     "namespace": "mylib",
     "srcDir": "src",
     "autoHandleGeneration": true,
-    "autoImportDetection": true,
     "globalExportGeneration": true
   }
 }
@@ -180,10 +198,11 @@ Add configuration to your `package.json`:
 | Option | Required | Description |
 |--------|----------|-------------|
 | `namespace` | Yes | Namespace prefix for your library (e.g., "mylib" for `@mylib/utils/date`) |
-| `srcDir` | No | Source directory (default: "src") |
-| `autoHandleGeneration` | No | Auto-generate handle names based on folder structure |
-| `autoImportDetection` | No | Auto-detect namespace imports and add as dependencies |
-| `globalExportGeneration` | No | Generate global registration code for ES modules |
+| `js.srcDir` | No | JavaScript source directory (default: "src") |
+| `css.srcDir` | No | CSS source directory (default: "src") |
+| `js.autoHandleGeneration` | No | Auto-generate JS handle names based on folder structure |
+| `css.autoHandleGeneration` | No | Auto-generate CSS handle names based on folder structure |
+| `js.globalExportGeneration` | No | Generate global registration code for ES modules |
 
 ### Writing ES Modules
 
