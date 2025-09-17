@@ -12,8 +12,6 @@ import { createElement } from '@wordpress/element';
 // Expected combined: jquery, wp-blocks, wp-element, wp-i18n
 
 const message = __('Mixed dependencies test', 'test-domain');
-const element = createElement('div', { className: 'test-mixed' }, message);
+export const element = createElement('div', { className: 'test-mixed' }, message);
 
 console.log('Mixed dependencies loaded:', { element });
-
-export default element;
