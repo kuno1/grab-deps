@@ -2,4 +2,7 @@ test/
 wp-dependencies.json
 .node-version
 .github/
+.git/
 .idea/
+.husky/
+.vscode/

@@ -28,6 +28,8 @@ switch ( subcommand ) {
 					suffix = arg;
 				} else if ( i === 3 ) {
 					version = arg;
+				} else if ( i === 4 ) {
+					configPath = arg;
 				}
 			}
 
