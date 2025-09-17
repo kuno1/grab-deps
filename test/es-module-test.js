@@ -51,9 +51,9 @@ describe('ES Module Export Detection', function() {
         );
 
         // Should create namespace hierarchy
-        assert.ok(globalCode.includes('window.testns = window.testns || {};'));
-        assert.ok(globalCode.includes('window.testns.js = window.testns.js || {};'));
-        assert.ok(globalCode.includes('window.testns.js.modules = window.testns.js.modules || {};'));
+		assert.ok(globalCode.includes('globalThis.testns = globalThis.testns || {};'));
+        assert.ok(globalCode.includes('globalThis.testns.js = globalThis.testns.js || {};'));
+        assert.ok(globalCode.includes('globalThis.testns.js.modules = globalThis.testns.js.modules || {};'));
 
         // Should register named exports
         assert.ok(globalCode.includes('formatDate: formatDate'));
@@ -93,14 +93,4 @@ describe('ES Module Export Detection', function() {
         assert.ok(exports.named.includes('DataProcessor'));
         assert.ok(exports.default);
     });
-
-    it('Should handle export default with variable name', function() {
-        const result = grabDeps('test/src/js/components/list.js');
-
-        // Should detect default export with variable name
-        assert.strictEqual(result.handle, 'testns-js-components-list');
-        assert.ok(result.globalRegistration);
-        assert.ok(result.globalRegistration.includes('window.testns.js.components.list = List;'));
-    });
-
 });

@@ -362,10 +362,97 @@ This approach gives you the best of both worlds: modern development experience w
 The `grab-deps js` command provides advanced JavaScript compilation capabilities that override @wordpress/scripts functionality while leveraging webpack.config.js for enhanced processing.
 
 **Key Features:**
-- **ES6 Export Problem Resolution**: Automatically handles empty compiled files from ES6-only exports
-- **Global Registration Code Generation**: Converts ES modules to globally accessible variables
+- **ES6 Export Problem Resolution**: Automatically handles empty compiled files from ES6-only exports (Issue #42 fix)
+- **Global Registration Code Generation**: Converts ES modules to globally accessible variables  
+- **Jest Environment Support**: Uses `globalThis` for Node.js and browser compatibility
 - **Dependency Auto-Detection**: Extracts dependencies from asset.php files
 - **Hierarchical Directory Processing**: Maintains source directory structure
+- **Improved Namespace Structure**: Direct component access without filename clutter
+
+#### Required webpack.config.js Setup
+
+**⚠️ Important**: To enable ES module transformation and global registration, you must configure your project's `webpack.config.js`:
+
+**Option 1: Simple Setup (Recommended)**
+```javascript
+// webpack.config.js in your project root
+const grabDepsConfig = require('@kunoichi/grab-deps/webpack.config.js');
+module.exports = grabDepsConfig;
+```
+
+**Option 2: Extending Existing Configuration**
+```javascript
+// webpack.config.js - if you have existing webpack configuration
+const grabDepsConfig = require('@kunoichi/grab-deps/webpack.config.js');
+const yourCustomConfig = {
+  // Your existing webpack configuration...
+};
+
+module.exports = {
+  ...grabDepsConfig,
+  ...yourCustomConfig
+};
+```
+
+**Option 3: For Advanced Users**
+```javascript
+// webpack.config.js - if you need full control
+const defaultConfig = require('@wordpress/scripts/config/webpack.config');
+const path = require('path');
+
+module.exports = {
+  ...defaultConfig,
+  module: {
+    ...defaultConfig.module,
+    rules: [
+      // Add grab-deps loader before other loaders
+      {
+        test: /\.m?(j|t)sx?$/,
+        exclude: /node_modules/,
+        use: [
+          {
+            loader: path.resolve('./node_modules/@kunoichi/grab-deps/lib/webpack-loaders/namespace-transform-loader.js'),
+          },
+        ],
+        enforce: 'pre',
+      },
+      // Include all existing rules
+      ...defaultConfig.module.rules,
+    ],
+  },
+};
+```
+
+#### Namespace Structure
+
+The new namespace structure excludes filenames for cleaner component access:
+
+```javascript
+// File: src/js/utils.js
+export const formatDate = (date) => date.toISOString();
+// Result: globalThis.mylib.formatDate
+
+// File: src/js/components/modal.js  
+export const Modal = () => { /* ... */ };
+// Result: globalThis.mylib.components.Modal
+
+// Usage in browser/WordPress:
+mylib.formatDate(new Date());
+mylib.components.Modal();
+```
+
+#### Jest Testing Support
+
+The generated code uses `globalThis` instead of `window`, making it compatible with Jest and other Node.js testing environments:
+
+```javascript
+// Works in both browser and Jest/Node.js environments
+globalThis.mylib = globalThis.mylib || {};
+globalThis.mylib.components = Object.assign(globalThis.mylib.components, {
+    Modal: Modal,
+    Button: Button
+});
+```
 
 For detailed technical information about the compilation process, see:
 📖 **[Architecture Documentation](docs/grab-deps-js-architecture.md)**
