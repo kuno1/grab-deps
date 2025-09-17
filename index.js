@@ -415,7 +415,34 @@ function compileDirectory(
 										compiledContent.trim().length === 0 ||
 										isMinimalFile
 									) {
-										// File is empty or minimal (tree-shaking issue) - add global registration code
+										// File is empty or minimal (tree-shaking issue) - inject implementation + global registration
+										const originalSource = fs.readFileSync(
+											filePath,
+											'utf8'
+										);
+
+										// Generate implementation code by removing exports and imports
+										const implementationCode =
+											originalSource
+												.replace(
+													/^\/\*![\s\S]*?\*\/\s*/m,
+													''
+												) // Remove license comments
+												.replace(
+													/^import\s+.*?from\s+['"][^'"]+['"];?\s*/gm,
+													''
+												) // Remove imports
+												.replace(
+													/^export\s+(default\s+)?/gm,
+													''
+												) // Remove export statements
+												.replace(
+													/^export\s*\{[^}]*\}\s*;?\s*/gm,
+													''
+												) // Remove named exports
+												.trim();
+
+										// Add global registration code
 										const globalCode =
 											generateGlobalRegistration(
 												filePath,
@@ -423,10 +450,14 @@ function compileDirectory(
 												config.namespace,
 												exports
 											);
-										fs.writeFileSync(
-											destFile,
-											globalCode
-										);
+
+										// Combine implementation and registration
+										const fullCode =
+											implementationCode +
+											'\n\n' +
+											globalCode;
+
+										fs.writeFileSync( destFile, fullCode );
 									} else if (
 										exports.default &&
 										typeof exports.default === 'string'
