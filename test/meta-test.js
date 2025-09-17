@@ -29,7 +29,7 @@ describe( 'Additional meta information', () => {
 	} );
 
 	it( 'JS without @handle', () => {
-		assert.equal( js_no.handle, 'testns-js-no-deps' );
+		assert.equal( js_no.handle, 'testns-no-deps' );
 	} );
 
 	it( 'CSS with @handle', () => {
@@ -37,7 +37,7 @@ describe( 'Additional meta information', () => {
 	} );
 
 	it( 'CSS without @handle', () => {
-		assert.equal( css_no.handle, 'testns-css-no-deps' );
+		assert.equal( css_no.handle, 'testns-no-deps' );
 	} );
 
 	it( 'JS with @footer', () => {

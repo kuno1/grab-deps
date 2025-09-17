@@ -14,13 +14,13 @@ describe( 'Basic Grab Functions', () => {
 } );
 
 describe( 'License.txt test.', () => {
-	it( 'LICENSE.txt', () => {
+	it( 'Suffix = LICENSE.txt', () => {
 		assert.deepEqual( grabDeps( 'test/src/js/no-comment.js' ).deps, [ 'jquery', 'jquery-ui-datepicker', 'wp-element', 'wp-i18n' ] );
 	} );
-	it( 'mit.txt', () => {
+	it( 'Suffix = mit.txt', () => {
 		assert.deepEqual( grabDeps( 'test/src/js/no-comment.js', '.mit.txt' ).deps, [ 'jquery', 'jquery-ui-datepicker', 'wp-element', 'wp-blocks' ] );
 	} );
-	it( 'function.txt', () => {
+	it( 'Suffix = function with *.asset.php', () => {
 		assert.deepEqual( grabDeps( 'test/src/js/no-comment.js', ( file ) => {
 			return file.replace( '.js', '-license.txt' );
 		} ).deps, [ 'jquery', 'jquery-ui-datepicker', 'wp-element', 'scriptaculous' ] );
