@@ -142,7 +142,33 @@ function grabDeps( file, suffix = '', version = '0.0.0', configPath = null ) {
 				const srcDirPath = path.resolve( config.srcDir );
 				const filePath = path.resolve( file );
 
-				// Check if file is within the configured source directory
+				// If dumpDir is configured and file is in dumpDir, convert path to srcDir equivalent
+				if ( config.dumpDir ) {
+					const dumpDirPath = path.resolve( config.dumpDir );
+
+					// Check if file is within the configured dump directory
+					if ( filePath.startsWith( dumpDirPath ) ) {
+						// Convert dump path back to source path for handle generation
+						const relativePath = path.relative(
+							dumpDirPath,
+							filePath
+						);
+						const convertedPath = path.join(
+							config.srcDir,
+							relativePath
+						);
+
+						// Use the converted path for handle generation
+						scanned.handle = generateHandleName(
+							convertedPath,
+							config.srcDir,
+							config.namespace
+						);
+						return scanned;
+					}
+				}
+
+				// Check if file is within the configured source directory (original logic)
 				if ( filePath.startsWith( srcDirPath ) ) {
 					scanned.handle = generateHandleName(
 						file,

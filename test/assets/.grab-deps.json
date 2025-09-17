@@ -2,6 +2,7 @@
   "namespace": "hb",
   "js": {
     "srcDir": "test/assets/js",
+    "dumpDir": "test/build/js",
     "globalExportGeneration": true,
     "autoHandleGeneration": true
   },
