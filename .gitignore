@@ -1,6 +1,5 @@
 node_modules
-wp-dependencies.json
-wp-dependencies-assets.json
+wp-*.json
 test/dist/
 test/build/
 .vscode/
