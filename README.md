@@ -32,13 +32,13 @@ Define tasks below in your [npm scripts](https://docs.npmjs.com/misc/scripts) or
 ### NPM Scripts
 
 Since version 2.0.0, CLI inter face is available.
-If you need traspiling JavaScripts with [@wordpress/scripts](https://www.npmjs.com/package/@wordpress/scripts), add dependencies.
+`@wordpress/scripts` is an **optional** peer dependency (since v3.3.0) and is not installed automatically. `grab-deps dump` works without it. If you need transpiling JavaScripts with `grab-deps js`, add [@wordpress/scripts](https://www.npmjs.com/package/@wordpress/scripts) to your dependencies.
 
 ```json
 {
-	"dependencies": {
-		"@kunoichi/grab-deps": "^2.0.0",
-		"@wordpress/sripts": "^27.0.0"
+	"devDependencies": {
+		"@kunoichi/grab-deps": "^3.3.0",
+		"@wordpress/scripts": "^36.0.0"
 	},
 	"scripts": {
 		"dump": "grab-deps dump assets",

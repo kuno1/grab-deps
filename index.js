@@ -264,7 +264,9 @@ function compileDirectory(
 	destDir = destDir.replace( /\/+$/, '' );
 	if ( ! isWordPressScriptsAvailable() ) {
 		return Promise.reject(
-			new Error( 'This function requires @wordpress/scripts.' )
+			new Error(
+				'This function requires @wordpress/scripts. Install it with: npm install --save-dev @wordpress/scripts'
+			)
 		);
 	}
 	const globDir = extensions.map( ( ext ) => `${ srcDir }/**/*.${ ext }` );
