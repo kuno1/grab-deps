@@ -4,8 +4,6 @@ A toolset to extract dependencies information from js/css files in WordPress Dev
 
 [日本語（Japanese）](https://github.com/kuno1/grab-deps/wiki/README-ja) is also available.
 
-[![TEST](https://github.com/kuno1/grab-deps/actions/workflows/npm.yml/badge.svg)](https://github.com/kuno1/grab-deps/actions/workflows/npm.yml)
-
 This library dump `wp-dependencies.json` which includes dependencies and path information about js/css.
 
 - You don't have to specify dependencies from php files.
