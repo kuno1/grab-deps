@@ -149,7 +149,7 @@ npx grab-deps js src/components dist/components --config components.grab-deps.js
 ## 注意事項
 
 - @wordpress/scriptsがインストールされている必要があります
-- Node.js 18.0.0以上が必要です
+- Node.js 20.19.0以上が必要です
 - ES6 exportの自動変換は、globalExportGenerationが有効な場合のみ動作します
 
 ## トラブルシューティング

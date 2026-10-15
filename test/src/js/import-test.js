@@ -6,7 +6,6 @@
 
 import { helper } from './utils/helper.js';  // 相対パス - webpack でバンドルされる
 import { component } from '../components/ui.js';  // 相対パス - webpack でバンドルされる
-import axios from 'axios';  // 外部ライブラリ - 無視される
 import { useState } from 'react';  // 外部ライブラリ - 無視される
 
 // Use standard WordPress-style global access

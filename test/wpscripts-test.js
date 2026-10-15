@@ -41,8 +41,8 @@ describe('JS compile test', function () {
 	it('Are JS files compiled?', function () {
 		// Critical files that must exist
 		const criticalFiles = [
-			'test-build-block.jsx.js',
-			'test-build-block.jsx.LICENSE.txt',
+			'test-build-block.js',
+			'test-build-block.js.LICENSE.txt',
 		];
 
 		// Optional files that may not exist in CI
@@ -94,7 +94,7 @@ describe('JS compile test', function () {
 		// Is file exists?
 		[
 			'test-build-sample.js.asset.php',
-			'test-build-block.jsx.asset.php',
+			'test-build-block.asset.php',
 		].forEach( ( file ) => {
 			assert.strictEqual(fs.existsSync( `${destDir}/${file}` ), false, `${file} does not exist` );
 		});

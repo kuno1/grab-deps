@@ -36,23 +36,20 @@
 	},
 	"homepage": "https://github.com/kuno1/grab-deps#readme",
 	"dependencies": {
-		"glob": "^11.0.1"
+		"glob": "^13.0.6"
 	},
 	"devDependencies": {
-		"@wordpress/scripts": "^27.9.0",
+		"@wordpress/scripts": "^36.1.0",
 		"husky": "^9.1.7",
 		"imagemin": "^9.0.0",
 		"imagemin-gifsicle": "^7.0.0",
 		"imagemin-jpegtran": "^8.0.0",
 		"imagemin-pngquant": "^10.0.0",
-		"imagemin-svgo": "^11.0.1",
-		"mocha": "^11.7.1"
+		"imagemin-svgo": "^12.0.0",
+		"mocha": "^12.0.3"
 	},
 	"engines": {
-		"node": ">=18.0.0"
-	},
-	"volta": {
-		"node": "18.20.6"
+		"node": ">=20.19.0"
 	},
 	"grabDeps": {
 		"namespace": "testns",
@@ -72,6 +69,6 @@
 		"imagemin-gifsicle": "^7.0.0",
 		"imagemin-jpegtran": "^8.0.0",
 		"imagemin-pngquant": "^10.0.0",
-		"imagemin-svgo": "^11.0.1"
+		"imagemin-svgo": "^11.0.1 || ^12.0.0"
 	}
 }
