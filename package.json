@@ -10,7 +10,7 @@
 		"test:ci": "mocha",
 		"test:watch": "mocha --ignore 'test/file-system-watch-test.js' --watch",
 		"lint": "wp-scripts lint-js '{index.js,lib/*.js,bin/grab-deps.js,bin/grab-images.mjs}'",
-		"format": "eslint --fix --c ./node_modules/@wordpress/scripts/config/.eslintrc.js '{index.js,lib/*.js,bin/grab-deps.js,bin/grab-images.mjs}'",
+		"format": "wp-scripts lint-js --fix '{index.js,lib/*.js,bin/grab-deps.js,bin/grab-images.mjs}'",
 		"imagemin": "npx grab-deps-image 'test/src/images/**/*.{jpg,png,gif,svg}' test/dist/images",
 		"build:js": "npx grab-deps js test/src/js test/dist/js",
 		"build:assets": "npx grab-deps js test/assets/js test/build/js js test/assets/.grab-deps.json",
@@ -19,8 +19,8 @@
 		"prepare": "husky"
 	},
 	"bin": {
-		"grab-deps-image": "./bin/grab-images.mjs",
-		"grab-deps": "./bin/grab-deps.js"
+		"grab-deps-image": "bin/grab-images.mjs",
+		"grab-deps": "bin/grab-deps.js"
 	},
 	"repository": {
 		"type": "git",
