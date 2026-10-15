@@ -21,7 +21,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18.20.6'
+          # Trusted Publishing (OIDC) requires npm >= 11.5.1, bundled with Node 24.
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
@@ -49,6 +50,5 @@ jobs:
           cat package.json | grep '"version"'
 
       - name: Publish to npm
+        # Authenticated via npm Trusted Publishing (OIDC). No token required.
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.KUNOICHI_NPM_ACCESS_TOKEN }}
