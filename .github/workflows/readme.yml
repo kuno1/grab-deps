@@ -6,38 +6,50 @@ on:
       - "README.md"
     branches:
       - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   translate_and_update_wiki:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: pip install 'openai>=1,<2'
+        run: pip install 'anthropic==1.12.1'
 
       - name: Translate README to Japanese
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          python - <<EOF
-          from openai import OpenAI
-
-          def translate_to_japanese(text):
-            client = OpenAI(api_key="${{ secrets.KUNOICHI_OPENAI_API_KEY }}")
-            completion = client.chat.completions.create(
-              model='gpt-4o-mini',
-              messages=[
-                {"role": "system", "content": "Translate this text from English to Japanese."},
-                {"role": "user", "content": text}
-              ]
-            )
-            return completion.choices[0].message.content
+          python - <<'EOF'
+          import sys
+          import anthropic
 
           with open("README.md", "r", encoding="utf-8") as f:
               content = f.read()
 
-          translated = translate_to_japanese(content)
+          client = anthropic.Anthropic()
+          with client.messages.stream(
+              model="claude-opus-5-5",
+              max_tokens=64000,
+              output_config={"effort": "low"},
+              system=(
+                  "Translate the user's Markdown document from English to Japanese. "
+                  "Keep the Markdown structure, code blocks, inline code, URLs and "
+                  "command names unchanged. Output only the translated document."
+              ),
+              messages=[{"role": "user", "content": content}],
+          ) as stream:
+              message = stream.get_final_message()
 
+          if message.stop_reason != "end_turn":
+              sys.exit(f"Translation did not finish: stop_reason={message.stop_reason}")
+
+          translated = "".join(b.text for b in message.content if b.type == "text")
           with open("README-ja.md", "w", encoding="utf-8") as f:
               f.write(translated)
           EOF
@@ -50,8 +62,12 @@ jobs:
       - name: Commit and Push to Wiki
         run: |
           cd wiki
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add README-ja.md
+          if git diff --cached --quiet; then
+            echo "No changes to the Japanese README."
+            exit 0
+          fi
           git commit -m "Update Japanese README in Wiki"
           git push
