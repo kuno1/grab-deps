@@ -70,5 +70,25 @@
 		"imagemin-jpegtran": "^8.0.0",
 		"imagemin-pngquant": "^10.0.0",
 		"imagemin-svgo": "^11.0.1 || ^12.0.0"
+	},
+	"peerDependenciesMeta": {
+		"@wordpress/scripts": {
+			"optional": true
+		},
+		"imagemin": {
+			"optional": true
+		},
+		"imagemin-gifsicle": {
+			"optional": true
+		},
+		"imagemin-jpegtran": {
+			"optional": true
+		},
+		"imagemin-pngquant": {
+			"optional": true
+		},
+		"imagemin-svgo": {
+			"optional": true
+		}
 	}
 }

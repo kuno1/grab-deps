@@ -3,15 +3,40 @@
 /*!
  * Image optimization
  */
-import imagemin from 'imagemin';
-// eslint-disable-next-line import/no-unresolved -- ESM-only "exports" is not resolved by eslint-plugin-import.
-import imageminJpegtran from 'imagemin-jpegtran';
-import imageminPngquant from 'imagemin-pngquant';
-import imageminGifsicle from 'imagemin-gifsicle';
-import imageminSvgo from 'imagemin-svgo';
 import { stat } from 'fs/promises';
 
 const [ , , src, dest ] = process.argv;
+
+// imagemin packages are optional peer dependencies. Load them lazily.
+let imagemin,
+	imageminJpegtran,
+	imageminPngquant,
+	imageminGifsicle,
+	imageminSvgo;
+try {
+	[
+		{ default: imagemin },
+		{ default: imageminJpegtran },
+		{ default: imageminPngquant },
+		{ default: imageminGifsicle },
+		{ default: imageminSvgo },
+	] = await Promise.all( [
+		import( 'imagemin' ),
+		// eslint-disable-next-line import/no-unresolved -- ESM-only "exports" is not resolved by eslint-plugin-import.
+		import( 'imagemin-jpegtran' ),
+		import( 'imagemin-pngquant' ),
+		import( 'imagemin-gifsicle' ),
+		import( 'imagemin-svgo' ),
+	] );
+} catch ( e ) {
+	// eslint-disable-next-line no-console
+	console.error(
+		'grab-deps-image requires imagemin packages. Install them with:\n' +
+			'  npm install --save-dev imagemin imagemin-gifsicle imagemin-jpegtran imagemin-pngquant imagemin-svgo\n\n' +
+			e.message
+	);
+	process.exit( 1 );
+}
 
 /**
  * Get file size of image.

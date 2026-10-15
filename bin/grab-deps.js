@@ -67,8 +67,11 @@ switch ( subcommand ) {
 					// eslint-disable-next-line no-console
 					console.log( 'Compiled JavaScripts.' );
 				} )
-				// eslint-disable-next-line no-console
-				.catch( console.error );
+				.catch( ( e ) => {
+					// eslint-disable-next-line no-console
+					console.error( e.message );
+					process.exitCode = 1;
+				} );
 		}
 		break;
 	default:
