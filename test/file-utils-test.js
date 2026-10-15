@@ -124,3 +124,20 @@ describe( 'extractHeaderToLicense with only empty deps', () => {
 		fs.rmSync( dir, { recursive: true, force: true } );
 	} );
 } );
+
+describe( 'extractHeaderToLicense with JSX source', () => {
+	const fs = require( 'fs' );
+	const os = require( 'os' );
+	const path = require( 'path' );
+	const { extractHeaderToLicense } = require( '../lib/file-utils' );
+
+	it( 'Should name LICENSE.txt after the compiled .js file', () => {
+		const dir = fs.mkdtempSync( path.join( os.tmpdir(), 'grab-deps-' ) );
+		const file = path.join( dir, 'block.jsx' );
+		fs.writeFileSync( file, '/*!\n * @handle block\n */\nconsole.log( 1 );\n' );
+		extractHeaderToLicense( file, dir, dir, [ 'wp-element' ] );
+		assert.ok( fs.existsSync( path.join( dir, 'block.js.LICENSE.txt' ) ) );
+		assert.ok( ! fs.existsSync( path.join( dir, 'block.jsx.LICENSE.txt' ) ) );
+		fs.rmSync( dir, { recursive: true, force: true } );
+	} );
+} );
