@@ -90,3 +90,37 @@ describe( 'File Utilities', () => {
 		} );
 	} );
 } );
+
+describe( 'extractHeaderToLicense', () => {
+	const fs = require( 'fs' );
+	const os = require( 'os' );
+	const path = require( 'path' );
+	const { extractHeaderToLicense } = require( '../lib/file-utils' );
+
+	it( 'Should ignore empty handles in deps', () => {
+		const dir = fs.mkdtempSync( path.join( os.tmpdir(), 'grab-deps-' ) );
+		const file = path.join( dir, 'sample.js' );
+		fs.writeFileSync( file, '/*!\n * @handle sample\n * @deps jquery\n */\nconsole.log( 1 );\n' );
+		extractHeaderToLicense( file, dir, dir, [ '', 'wp-i18n', ' ' ] );
+		const license = fs.readFileSync( file + '.LICENSE.txt', 'utf8' );
+		assert.ok( license.includes( '@deps jquery, wp-i18n\n' ), license );
+		fs.rmSync( dir, { recursive: true, force: true } );
+	} );
+} );
+
+describe( 'extractHeaderToLicense with only empty deps', () => {
+	const fs = require( 'fs' );
+	const os = require( 'os' );
+	const path = require( 'path' );
+	const { extractHeaderToLicense } = require( '../lib/file-utils' );
+
+	it( 'Should keep the original header untouched', () => {
+		const dir = fs.mkdtempSync( path.join( os.tmpdir(), 'grab-deps-' ) );
+		const file = path.join( dir, 'sample.js' );
+		const header = '/*!\n * @handle sample\n * @deps jquery\n */';
+		fs.writeFileSync( file, header + '\nconsole.log( 1 );\n' );
+		extractHeaderToLicense( file, dir, dir, [ '' ] );
+		assert.strictEqual( fs.readFileSync( file + '.LICENSE.txt', 'utf8' ), header );
+		fs.rmSync( dir, { recursive: true, force: true } );
+	} );
+} );

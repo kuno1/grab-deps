@@ -89,7 +89,11 @@ function grabDeps( file, suffix = '', version = '0.0.0', configPath = null ) {
 				);
 				if ( match ) {
 					match[ 1 ].split( ',' ).forEach( ( dep ) => {
-						deps.push( dep.trim().replaceAll( "'", '' ) );
+						// Multi-line asset.php may have trailing commas or an empty array.
+						const handle = dep.trim().replaceAll( "'", '' );
+						if ( handle && ! deps.includes( handle ) ) {
+							deps.push( handle );
+						}
 					} );
 				}
 			}
