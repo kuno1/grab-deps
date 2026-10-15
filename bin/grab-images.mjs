@@ -4,6 +4,7 @@
  * Image optimization
  */
 import imagemin from 'imagemin';
+// eslint-disable-next-line import/no-unresolved -- ESM-only "exports" is not resolved by eslint-plugin-import.
 import imageminJpegtran from 'imagemin-jpegtran';
 import imageminPngquant from 'imagemin-pngquant';
 import imageminGifsicle from 'imagemin-gifsicle';
