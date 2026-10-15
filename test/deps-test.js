@@ -44,3 +44,12 @@ describe( 'WordPress imports test.', () => {
 		assert.equal( result.handle, 'duplicate-deps' );
 	} );
 } );
+
+describe( 'Multi-line *.asset.php (dependency-extraction-webpack-plugin >= 6.4x).', () => {
+	it( 'Empty dependencies array does not add an empty handle', () => {
+		assert.deepEqual( grabDeps( 'test/fixtures/multiline-asset/multiline-empty.js' ).deps, [ 'jquery' ] );
+	} );
+	it( 'Trailing comma does not add an empty handle', () => {
+		assert.deepEqual( grabDeps( 'test/fixtures/multiline-asset/multiline-deps.js' ).deps, [ 'wp-element', 'wp-i18n' ] );
+	} );
+} );
