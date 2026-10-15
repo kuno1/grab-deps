@@ -47,7 +47,13 @@ If you need traspiling JavaScripts with [@wordpress/scripts](https://www.npmjs.c
 }
 ```
 
-`grab-deps-image 'test/src/images/**/*.{jpg,png,gif,svg}' test/dist/images` is also available. See peer dependencies for more information.
+`grab-deps-image 'test/src/images/**/*.{jpg,png,gif,svg}' test/dist/images` is also available.
+
+The image optimizer depends on imagemin packages, which are **optional** peer dependencies (since v3.3.0) and are not installed automatically. Install them only if you use `grab-deps-image`:
+
+```bash
+npm install --save-dev imagemin imagemin-gifsicle imagemin-jpegtran imagemin-pngquant imagemin-svgo
+```
 
 ### Gulp
 
