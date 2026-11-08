@@ -36,10 +36,10 @@
 	},
 	"homepage": "https://github.com/kuno1/grab-deps#readme",
 	"dependencies": {
-		"glob": "^13.0.6"
+		"glob": "^14.0.3"
 	},
 	"devDependencies": {
-		"@wordpress/scripts": "^36.1.0",
+		"@wordpress/scripts": "^37.0.0",
 		"husky": "^9.1.7",
 		"imagemin": "^9.0.0",
 		"imagemin-gifsicle": "^7.0.0",
